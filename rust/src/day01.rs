@@ -6,7 +6,7 @@ pub fn solve() {
     solve_internal("gh");
 }
 
-fn solve_internal(test_name: &str) {
+fn solve_internal(test_name: &str) -> (i32, i32) {
     let mut a = Vec::new();
     let mut b = Vec::new();
 
@@ -54,4 +54,21 @@ fn solve_internal(test_name: &str) {
     println!("Test name: {}", test_name);
     println!("Day 01, part 1: {}", part1);
     println!("Day 01, part 2: {}", part2);
+
+    (part1, part2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_part1() {
+        assert_eq!(solve_internal("test0").0, 11);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(solve_internal("test0").1, 31);
+    }
 }
