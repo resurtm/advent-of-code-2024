@@ -3,3 +3,6 @@
 /lib/
 .bsb.lock
 .merlin
+
+# might be a good idea to include this, but I don't want to for now
+*.mjs
