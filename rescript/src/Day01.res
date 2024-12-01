@@ -32,13 +32,24 @@ let solve = (case: string) => {
     Belt.Array.zip(a, b)
     ->Array.map(x =>
       switch x {
-      | (m, n) => Math.abs(float(m - n))
+      | (m, n) => Math.abs(float(m - n))->Int.fromFloat
       }
     )
-    ->Array.reduce(0., (x, acc) => x +. acc)
-    ->Float.toString
+    ->Array.reduce(0, (acc, x) => acc + x)
+    ->Int.toString
+
+  let freq =
+    b->Array.reduce(Belt.Map.Int.empty, (acc, x) =>
+      acc->Belt.Map.Int.set(x, acc->Belt.Map.Int.getWithDefault(x, 0) + 1)
+    )
+  let part2 =
+    a
+    ->Array.map(x => freq->Belt.Map.Int.getWithDefault(x, 0) * x)
+    ->Array.reduce(0, (acc, x) => acc + x)
+    ->Int.toString
 
   Console.log(`Day 01, part 1, case '${case}':\t${part1}`)
+  Console.log(`Day 01, part 2, case '${case}':\t${part2}`)
 }
 
 solve("test0")
