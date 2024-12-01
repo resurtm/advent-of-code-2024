@@ -1,4 +1,4 @@
-use std::fs;
+use std::{collections::HashMap, fs};
 
 pub fn solve() {
     solve_internal("test0");
@@ -37,10 +37,21 @@ fn solve_internal(test_name: &str) {
     a.sort();
     b.sort();
     let mut c = Vec::new();
+    let mut freq = HashMap::new();
+
     for idx in 0..a.len() {
         c.push((a[idx] - b[idx]).abs());
+        if !freq.contains_key(&b[idx]) {
+            freq.insert(b[idx], 1);
+        } else {
+            freq.insert(b[idx], *freq.get(&b[idx]).expect("not expected") + 1);
+        }
     }
 
+    let part1 = c.iter().sum::<i32>();
+    let part2 = a.iter().map(|x| x * freq.get(x).unwrap_or(&0)).sum::<i32>();
+
     println!("Test name: {}", test_name);
-    println!("Day 01, part 1: {}", c.iter().sum::<i32>());
+    println!("Day 01, part 1: {}", part1);
+    println!("Day 01, part 2: {}", part2);
 }
