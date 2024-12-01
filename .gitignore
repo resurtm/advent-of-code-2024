@@ -1,3 +1,5 @@
 /rust/target/
-/data
+/data/
+/.idea/
+/build/
 
