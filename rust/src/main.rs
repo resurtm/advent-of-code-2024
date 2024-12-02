@@ -1,3 +1,4 @@
 fn main() {
-    aoc24::day01::solve();
+    // aoc24::day01::solve();
+    aoc24::day02::solve();
 }

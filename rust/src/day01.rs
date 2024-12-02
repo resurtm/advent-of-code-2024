@@ -51,16 +51,16 @@ fn solve_internal(test_name: &str) -> (i32, i32) {
     let part1 = c.iter().sum::<i32>();
     let part2 = a.iter().map(|x| x * freq.get(x).unwrap_or(&0)).sum::<i32>();
 
-    println!("Test name: {}", test_name);
-    println!("Day 01, part 1: {}", part1);
-    println!("Day 01, part 2: {}", part2);
+    println!("Test Name: {}", test_name);
+    println!("Day 01, Part 1: {}", part1);
+    println!("Day 01, Part 2: {}", part2);
 
     (part1, part2)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::solve_internal;
 
     #[test]
     fn test_part1() {
