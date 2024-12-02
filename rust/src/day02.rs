@@ -7,7 +7,7 @@ pub fn solve() {
 }
 
 fn solve_internal(test_name: &str) -> (i32, i32) {
-    let part1 = fs::read_to_string(format!("../data/day02/{}.txt", test_name))
+    let lines: Vec<Vec<i32>> = fs::read_to_string(format!("../data/day02/{}.txt", test_name))
         .expect("cannot read input file")
         .split("\n")
         .into_iter()
@@ -21,16 +21,34 @@ fn solve_internal(test_name: &str) -> (i32, i32) {
                 .map(|x| x.parse::<i32>().expect("invalid data type"))
                 .collect::<Vec<i32>>()
         })
+        .collect();
+
+    let part1 = lines
+        .iter()
         .map(|x| is_decr(&x) || is_incr(&x))
         .fold(0, |acc, x| if x { acc + 1 } else { acc });
 
-    let part2 = 0;
+    let part2 = lines
+        .iter()
+        .map(|x| is_fixable(&x))
+        .fold(0, |acc, x| if x { acc + 1 } else { acc });
 
     println!("Test Name: {}", test_name);
     println!("Day 01, Part 1: {}", part1);
     println!("Day 01, Part 2: {}", part2);
 
     (part1, part2)
+}
+
+fn is_fixable(v: &Vec<i32>) -> bool {
+    for rem_idx in 0..v.len() {
+        let mut tmp = v.clone();
+        tmp.remove(rem_idx);
+        if is_decr(&tmp) || is_incr(&tmp) {
+            return true;
+        }
+    }
+    false
 }
 
 fn is_decr(v: &Vec<i32>) -> bool {
@@ -64,6 +82,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(solve_internal("test0").1, 0);
+        assert_eq!(solve_internal("test0").1, 4);
     }
 }
