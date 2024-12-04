@@ -14,22 +14,23 @@ fn solve_internal(test_name: &str) -> (i32, i32) {
     );
     mat.check();
     println!("Test Name: {}", test_name);
-    println!("Day 01, Part 1: {}", mat.res);
-    println!("Day 01, Part 2: {}", 0);
-    (mat.res, 0)
+    println!("Day 01, Part 1: {}", mat.part1);
+    println!("Day 01, Part 2: {}", mat.part2);
+    (mat.part1, mat.part2)
 }
 
 struct Mat {
     mat: Vec<Vec<char>>,
     w: i32,
     h: i32,
-    res: i32,
+    part1: i32,
+    part2: i32,
 }
 
 impl Mat {
     fn traverse(&mut self, sx: i32, sy: i32, dir: i32, curr_char: char) {
         if curr_char == 'S' {
-            self.res += 1;
+            self.part1 += 1;
             return;
         }
         let (x, y) = match dir {
@@ -63,6 +64,7 @@ impl Mat {
     }
 
     fn check(&mut self) {
+        // part 1
         for i in 0..self.w {
             for j in 0..self.h {
                 if self.mat[i as usize][j as usize] == 'X' {
@@ -71,6 +73,36 @@ impl Mat {
                     }
                 }
             }
+        }
+        // part 2
+        for i in 1..self.w - 1 {
+            for j in 1..self.h - 1 {
+                if self.mat[i as usize][j as usize] == 'A' {
+                    self.diagonals(i as usize, j as usize);
+                }
+            }
+        }
+    }
+
+    fn diagonals(&mut self, x: usize, y: usize) {
+        let a = self.mat[x - 1][y - 1] == 'M'
+            && self.mat[x + 1][y - 1] == 'M'
+            && self.mat[x - 1][y + 1] == 'S'
+            && self.mat[x + 1][y + 1] == 'S';
+        let b = self.mat[x - 1][y - 1] == 'S'
+            && self.mat[x + 1][y - 1] == 'S'
+            && self.mat[x - 1][y + 1] == 'M'
+            && self.mat[x + 1][y + 1] == 'M';
+        let c = self.mat[x - 1][y - 1] == 'M'
+            && self.mat[x - 1][y + 1] == 'M'
+            && self.mat[x + 1][y - 1] == 'S'
+            && self.mat[x + 1][y + 1] == 'S';
+        let d = self.mat[x - 1][y - 1] == 'S'
+            && self.mat[x - 1][y + 1] == 'S'
+            && self.mat[x + 1][y - 1] == 'M'
+            && self.mat[x + 1][y + 1] == 'M';
+        if a || b || c || d {
+            self.part2 += 1;
         }
     }
 
@@ -87,7 +119,13 @@ impl Mat {
             .collect::<Vec<Vec<char>>>();
         let w = mat.len() as i32;
         let h = mat[0].len() as i32;
-        Mat { mat, w, h, res: 0 }
+        Mat {
+            mat,
+            w,
+            h,
+            part1: 0,
+            part2: 0,
+        }
     }
 }
 
@@ -108,5 +146,15 @@ mod tests {
     #[test]
     fn test_part3() {
         assert_eq!(solve_internal("test2").0, 4);
+    }
+
+    #[test]
+    fn test_part4() {
+        assert_eq!(solve_internal("test3").1, 1);
+    }
+
+    #[test]
+    fn test_part5() {
+        assert_eq!(solve_internal("test4").1, 9);
     }
 }
