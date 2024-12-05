@@ -2,6 +2,8 @@ use std::fs;
 
 pub fn solve() {
     PrintQueue::new(String::from("test0")).solve();
+    PrintQueue::new(String::from("gh")).solve();
+    PrintQueue::new(String::from("google")).solve();
 }
 
 impl PrintQueue {
@@ -16,13 +18,29 @@ impl PrintQueue {
         }
     }
 
-    fn solve(&self) -> (i32, i32) {
+    fn solve(&mut self) -> (i32, i32) {
+        self.solve_part1();
         println!("Test Name: {}", self.test_name);
-        println!("Orders: {:?}", self.orders);
-        println!("Pages: {:?}", self.pages);
         println!("Day 01, Part 1: {}", self.part1);
         println!("Day 01, Part 2: {}", self.part2);
         (self.part1, self.part2)
+    }
+
+    fn solve_part1(&mut self) {
+        for pages in self.pages.iter() {
+            let mut valid = true;
+            'i: for i in 0..pages.len() {
+                for j in i + 1..pages.len() {
+                    if self.orders.contains(&(pages[j], pages[i])) {
+                        valid = false;
+                        break 'i;
+                    }
+                }
+            }
+            if valid {
+                self.part1 += pages[pages.len() / 2];
+            }
+        }
     }
 
     fn read_input(test_name: &str) -> (Vec<(i32, i32)>, Vec<Vec<i32>>) {
@@ -77,6 +95,6 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(PrintQueue::new(String::from("test0")).solve().0, 18);
+        assert_eq!(PrintQueue::new(String::from("test0")).solve().0, 143);
     }
 }
