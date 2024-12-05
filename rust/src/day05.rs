@@ -19,26 +19,28 @@ impl PrintQueue {
     }
 
     fn solve(&mut self) -> (i32, i32) {
-        self.solve_part1();
+        self.solve_internal();
         println!("Test Name: {}", self.test_name);
         println!("Day 01, Part 1: {}", self.part1);
         println!("Day 01, Part 2: {}", self.part2);
         (self.part1, self.part2)
     }
 
-    fn solve_part1(&mut self) {
-        for pages in self.pages.iter() {
+    fn solve_internal(&mut self) {
+        for pages in self.pages.iter_mut() {
             let mut valid = true;
-            'i: for i in 0..pages.len() {
+            for i in 0..pages.len() {
                 for j in i + 1..pages.len() {
                     if self.orders.contains(&(pages[j], pages[i])) {
                         valid = false;
-                        break 'i;
+                        pages.swap(i, j);
                     }
                 }
             }
             if valid {
                 self.part1 += pages[pages.len() / 2];
+            } else {
+                self.part2 += pages[pages.len() / 2];
             }
         }
     }
@@ -96,5 +98,10 @@ mod tests {
     #[test]
     fn test_part1() {
         assert_eq!(PrintQueue::new(String::from("test0")).solve().0, 143);
+    }
+
+    #[test]
+    fn test_part2() {
+        assert_eq!(PrintQueue::new(String::from("test0")).solve().1, 123);
     }
 }
