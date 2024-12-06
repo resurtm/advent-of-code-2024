@@ -21,8 +21,8 @@ impl PrintQueue {
     fn solve(&mut self) -> (i32, i32) {
         self.solve_internal();
         println!("Test Name: {}", self.test_name);
-        println!("Day 01, Part 1: {}", self.part1);
-        println!("Day 01, Part 2: {}", self.part2);
+        println!("Day 05, Part 1: {}", self.part1);
+        println!("Day 05, Part 2: {}", self.part2);
         (self.part1, self.part2)
     }
 

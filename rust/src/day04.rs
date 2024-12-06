@@ -14,8 +14,8 @@ fn solve_internal(test_name: &str) -> (i32, i32) {
     );
     mat.check();
     println!("Test Name: {}", test_name);
-    println!("Day 01, Part 1: {}", mat.part1);
-    println!("Day 01, Part 2: {}", mat.part2);
+    println!("Day 04, Part 1: {}", mat.part1);
+    println!("Day 04, Part 2: {}", mat.part2);
     (mat.part1, mat.part2)
 }
 

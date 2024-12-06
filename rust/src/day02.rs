@@ -34,8 +34,8 @@ fn solve_internal(test_name: &str) -> (i32, i32) {
         .fold(0, |acc, x| if x { acc + 1 } else { acc });
 
     println!("Test Name: {}", test_name);
-    println!("Day 01, Part 1: {}", part1);
-    println!("Day 01, Part 2: {}", part2);
+    println!("Day 02, Part 1: {}", part1);
+    println!("Day 02, Part 2: {}", part2);
 
     (part1, part2)
 }

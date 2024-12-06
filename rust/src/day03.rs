@@ -46,8 +46,8 @@ fn solve_internal(test_name: &str, only_part: i32) -> (i32, i32) {
     }
 
     println!("Test Name: {}", test_name);
-    println!("Day 01, Part 1: {}", part1);
-    println!("Day 01, Part 2: {}", part2);
+    println!("Day 03, Part 1: {}", part1);
+    println!("Day 03, Part 2: {}", part2);
 
     (part1, part2)
 }
