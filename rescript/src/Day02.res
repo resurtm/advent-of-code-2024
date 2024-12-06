@@ -21,8 +21,19 @@ let isIncr = x => {
 
 let check = x => isDecr(x) || isIncr(x)
 
+let collect = x =>
+  x
+  ->Array.reduce(0, (x, acc) =>
+    x + if acc {
+      1
+    } else {
+      0
+    }
+  )
+  ->Int.toString
+
 let solve = (case: string) => {
-  let part1 =
+  let data =
     readFileSync(~name=`../data/day02/${case}.txt`, #utf8)
     ->String.split("\n")
     ->Array.map(x => x->String.trim)
@@ -34,17 +45,20 @@ let solve = (case: string) => {
       ->Array.filter(x => x->String.length > 0)
       ->Array.map(x => x->Int.fromString->Option.getOr(0))
     )
-    ->Array.map(x => x->check)
-    ->Array.reduce(0, (x, acc) =>
-      x + if acc {
-        1
-      } else {
-        0
-      }
-    )
-    ->Int.toString
 
-  let part2 = 0->Int.toString
+  let part1 = data->Array.map(x => x->check)->collect
+  let part2 =
+    data
+    ->Array.map(row => {
+      row->Array.reduceWithIndex(false, (acc, _, idx) => {
+        acc ||
+        [
+          ...row->Array.slice(~start=0, ~end=idx),
+          ...row->Array.slice(~start=idx + 1, ~end=row->Array.length),
+        ]->check
+      })
+    })
+    ->collect
 
   Console.log(`Day 02, part 1, case '${case}':\t${part1}`)
   Console.log(`Day 02, part 2, case '${case}':\t${part2}`)
