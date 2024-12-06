@@ -1,7 +1,10 @@
+use std::collections::HashSet;
 use std::fs;
 
 pub fn solve() {
     GuardGallivant::new(String::from("test0")).solve();
+    GuardGallivant::new(String::from("gh")).solve();
+    GuardGallivant::new(String::from("google")).solve();
 }
 
 impl GuardGallivant {
@@ -14,6 +17,8 @@ impl GuardGallivant {
             w,
             h,
             pos: (0, 0),
+            dir: 0,
+            points: HashSet::new(),
             part1: 0,
             part2: 0,
             test_name,
@@ -22,13 +27,63 @@ impl GuardGallivant {
 
     fn solve_internal(&mut self) {
         self.find_start();
+
+        loop {
+            self.points.insert(self.pos);
+
+            // turn
+            match self.dir {
+                0 => {
+                    if self.pos.0 > 0
+                        && self.tiles[self.pos.0 as usize - 1][self.pos.1 as usize] == '#'
+                    {
+                        self.dir = 1;
+                    }
+                }
+                1 => {
+                    if self.pos.1 < self.h - 1
+                        && self.tiles[self.pos.0 as usize][self.pos.1 as usize + 1] == '#'
+                    {
+                        self.dir = 2;
+                    }
+                }
+                2 => {
+                    if self.pos.0 < self.w - 1
+                        && self.tiles[self.pos.0 as usize + 1][self.pos.1 as usize] == '#'
+                    {
+                        self.dir = 3;
+                    }
+                }
+                3 => {
+                    if self.pos.1 > 0
+                        && self.tiles[self.pos.0 as usize][self.pos.1 as usize - 1] == '#'
+                    {
+                        self.dir = 0;
+                    }
+                }
+                _ => panic!("invalid dir"),
+            }
+
+            // advance/move
+            match self.dir {
+                0 => self.pos.0 -= 1,
+                1 => self.pos.1 += 1,
+                2 => self.pos.0 += 1,
+                3 => self.pos.1 -= 1,
+                _ => panic!("invalid dir"),
+            }
+
+            if self.pos.0 < 0 || self.pos.0 >= self.w || self.pos.1 < 0 || self.pos.1 >= self.h {
+                break;
+            }
+        }
+
+        self.part1 = self.points.len() as i32;
     }
 
     fn solve(&mut self) -> (i32, i32) {
         self.solve_internal();
         println!("Test Name: {}", self.test_name);
-        println!("Tiles: {:?}", self.tiles);
-        println!("Pos: {:?}", self.pos);
         println!("Day 06, Part 1: {}", self.part1);
         println!("Day 06, Part 2: {}", self.part2);
         (self.part1, self.part2)
@@ -65,6 +120,8 @@ struct GuardGallivant {
     w: i32,
     h: i32,
     pos: (i32, i32),
+    dir: i32,
+    points: HashSet<(i32, i32)>,
     part1: i32,
     part2: i32,
     test_name: String,
