@@ -1,9 +1,10 @@
+use itertools::Itertools;
 use std::fs;
 
 pub fn solve() {
     BridgeRepair::new(String::from("test0")).solve();
-    // BridgeRepair::new(String::from("gh")).solve();
-    // BridgeRepair::new(String::from("google")).solve();
+    BridgeRepair::new(String::from("gh")).solve();
+    BridgeRepair::new(String::from("google")).solve();
 }
 
 impl BridgeRepair {
@@ -16,19 +17,43 @@ impl BridgeRepair {
         }
     }
 
-    fn solve_internal(&mut self) {
-        println!("Equations: {:?}", self.eqs);
+    fn solve_part1(&self) -> i128 {
+        let mut res = 0;
+        for eq in self.eqs.iter() {
+            res += Self::check_eq(&eq);
+        }
+        res
     }
 
-    fn solve(&mut self) -> (i32, i32) {
-        self.solve_internal();
+    fn check_eq(eq: &(i128, Vec<i128>)) -> i128 {
+        for perm in (0..eq.1.len() - 1)
+            .map(|_| ['+', '*'].iter())
+            .multi_cartesian_product()
+        {
+            let mut res = eq.1[0];
+            for i in 0..perm.len() {
+                match perm[i] {
+                    '+' => res += eq.1[i + 1],
+                    '*' => res *= eq.1[i + 1],
+                    _ => panic!("invalid op"),
+                }
+            }
+            if eq.0 == res {
+                return eq.0;
+            }
+        }
+        0
+    }
+
+    fn solve(&mut self) -> (i128, i128) {
+        self.part1 = self.solve_part1();
         println!("Test Name: {}", self.test_name);
         println!("Day 07, Part 1: {}", self.part1);
         println!("Day 07, Part 2: {}", self.part2);
         (self.part1, self.part2)
     }
 
-    fn read_input(test_name: &str) -> Vec<(i32, Vec<i32>)> {
+    fn read_input(test_name: &str) -> Vec<(i128, Vec<i128>)> {
         let raw =
             fs::read_to_string(format!("../data/day07/{}.txt", test_name)).expect("input file");
         raw.split("\n")
@@ -39,13 +64,13 @@ impl BridgeRepair {
                     parts
                         .get(0)
                         .expect("left")
-                        .parse::<i32>()
+                        .parse::<i128>()
                         .expect("correct left"),
                     parts
                         .get(1)
                         .expect("right")
                         .split_ascii_whitespace()
-                        .map(|x| x.parse::<i32>().expect("correct right"))
+                        .map(|x| x.parse::<i128>().expect("correct right"))
                         .collect(),
                 )
             })
@@ -54,9 +79,9 @@ impl BridgeRepair {
 }
 
 struct BridgeRepair {
-    eqs: Vec<(i32, Vec<i32>)>,
-    part1: i32,
-    part2: i32,
+    eqs: Vec<(i128, Vec<i128>)>,
+    part1: i128,
+    part2: i128,
     test_name: String,
 }
 
