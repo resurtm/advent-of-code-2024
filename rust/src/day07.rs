@@ -17,17 +17,24 @@ impl BridgeRepair {
         }
     }
 
-    fn solve_part1(&self) -> i128 {
-        let mut res = 0;
+    fn solve_internal(&self) -> (i128, i128) {
+        let mut p1 = 0;
+        let mut p2 = 0;
         for eq in self.eqs.iter() {
-            res += Self::check_eq(&eq);
+            p1 += Self::check_eq(&eq, false);
+            p2 += Self::check_eq(&eq, true);
         }
-        res
+        (p1, p2)
     }
 
-    fn check_eq(eq: &(i128, Vec<i128>)) -> i128 {
+    fn check_eq(eq: &(i128, Vec<i128>), ex: bool) -> i128 {
+        let chars = if ex {
+            vec!['+', '*', '|']
+        } else {
+            vec!['+', '*']
+        };
         for perm in (0..eq.1.len() - 1)
-            .map(|_| ['+', '*'].iter())
+            .map(|_| chars.iter())
             .multi_cartesian_product()
         {
             let mut res = eq.1[0];
@@ -35,6 +42,11 @@ impl BridgeRepair {
                 match perm[i] {
                     '+' => res += eq.1[i + 1],
                     '*' => res *= eq.1[i + 1],
+                    '|' => {
+                        res = format!("{}{}", res, eq.1[i + 1])
+                            .parse::<i128>()
+                            .expect("invalid str");
+                    }
                     _ => panic!("invalid op"),
                 }
             }
@@ -46,7 +58,9 @@ impl BridgeRepair {
     }
 
     fn solve(&mut self) -> (i128, i128) {
-        self.part1 = self.solve_part1();
+        let (a, b) = self.solve_internal();
+        self.part1 = a;
+        self.part2 = b;
         println!("Test Name: {}", self.test_name);
         println!("Day 07, Part 1: {}", self.part1);
         println!("Day 07, Part 2: {}", self.part2);
@@ -96,6 +110,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(BridgeRepair::new(String::from("test0")).solve().1, 0);
+        assert_eq!(BridgeRepair::new(String::from("test0")).solve().1, 11387);
     }
 }
