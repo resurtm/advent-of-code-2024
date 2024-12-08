@@ -1,4 +1,7 @@
-use std::{collections::HashMap, fs};
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
 
 pub fn solve() {
     ResonantCollinearity::new(String::from("test0")).solve();
@@ -12,8 +15,10 @@ impl ResonantCollinearity {
         ResonantCollinearity {
             w: map.len() as i32,
             h: map[0].len() as i32,
+
             map,
             ant: HashMap::new(),
+            hash: HashSet::new(),
 
             part1: 0,
             part2: 0,
@@ -21,21 +26,28 @@ impl ResonantCollinearity {
         }
     }
 
-    fn solve_internal(&mut self) {
+    fn solve_internal(&mut self, reps: i32) {
         for (ch, pos) in self.ant.iter() {
             for m in 0..pos.len() {
                 for n in m + 1..pos.len() {
                     let delta = ((pos[m].0 - pos[n].0), (pos[m].1 - pos[n].1));
-                    let its = vec![
-                        (pos[m].0 - delta.0, pos[m].1 - delta.1),
-                        (pos[m].0 + delta.0, pos[m].1 + delta.1),
-                        (pos[n].0 - delta.0, pos[n].1 - delta.1),
-                        (pos[n].0 + delta.0, pos[n].1 + delta.1),
-                    ];
+
+                    let mut its = Vec::new();
+                    for rep in 0..reps {
+                        let extend = vec![
+                            (pos[m].0 - delta.0 * rep, pos[m].1 - delta.1 * rep),
+                            (pos[m].0 + delta.0 * rep, pos[m].1 + delta.1 * rep),
+                            (pos[n].0 - delta.0 * rep, pos[n].1 - delta.1 * rep),
+                            (pos[n].0 + delta.0 * rep, pos[n].1 + delta.1 * rep),
+                        ];
+                        its.extend_from_slice(&extend);
+                    }
+
                     for (x, y) in its.iter() {
                         if *x < 0 || *y < 0 || *x >= self.w || *y >= self.h {
                             continue;
                         }
+                        self.hash.insert((*x, *y));
                         if self.map[*x as usize][*y as usize] == *ch {
                             continue;
                         }
@@ -43,7 +55,6 @@ impl ResonantCollinearity {
                     }
                 }
             }
-            // self.print_map();
         }
     }
 
@@ -61,12 +72,17 @@ impl ResonantCollinearity {
 
     fn solve(&mut self) -> (i32, i32) {
         self.find_ants();
-        self.solve_internal();
+
+        self.solve_internal(2);
         self.part1 = self.find_fills();
-        // self.print_map();
+
+        self.solve_internal(100);
+        self.part2 = self.hash.len() as i32;
+
         println!("Test Name: {}", self.test_name);
         println!("Day 08, Part 1: {}", self.part1);
         println!("Day 08, Part 2: {}", self.part2);
+
         (self.part1, self.part2)
     }
 
@@ -115,8 +131,10 @@ impl ResonantCollinearity {
 struct ResonantCollinearity {
     w: i32,
     h: i32,
+
     map: Vec<Vec<char>>,
     ant: HashMap<char, Vec<(i32, i32)>>,
+    hash: HashSet<(i32, i32)>,
 
     part1: i32,
     part2: i32,
@@ -139,7 +157,15 @@ mod tests {
     fn test_part2() {
         assert_eq!(
             ResonantCollinearity::new(String::from("test0")).solve().1,
-            0
+            34
+        );
+    }
+
+    #[test]
+    fn test_part3() {
+        assert_eq!(
+            ResonantCollinearity::new(String::from("test1")).solve().1,
+            9
         );
     }
 }
