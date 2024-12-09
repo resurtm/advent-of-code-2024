@@ -1,9 +1,10 @@
+use std::collections::VecDeque;
 use std::fs;
 
 pub fn solve() {
     DiskFragmenter::new(String::from("test0")).solve();
     DiskFragmenter::new(String::from("gh")).solve();
-    // DiskFragmenter::new(String::from("google")).solve();
+    DiskFragmenter::new(String::from("google")).solve();
 }
 
 impl DiskFragmenter {
@@ -18,54 +19,47 @@ impl DiskFragmenter {
 
     fn solve_internal(&self) -> i128 {
         // step 1
-        let mut map = String::new();
-        {
-            let mut index = 0;
-            let mut state = false;
-            for ch in self.input.chars() {
-                if !ch.is_alphanumeric() {
-                    continue;
-                }
-                let times = ch.to_digit(10).unwrap();
-                let st = if state {
-                    ".".to_string()
-                } else {
-                    index.to_string()
-                };
-                map.push_str(&st.repeat(times as usize));
-                if !state {
-                    index += 1;
-                }
-                state = !state;
+        let mut d: VecDeque<i128> = VecDeque::new();
+        let mut cnt = 0;
+        for (idx, ch) in self.input.chars().enumerate() {
+            for _ in 0..ch.to_digit(10).unwrap_or(0) {
+                d.push_back(if idx % 2 == 0 { cnt } else { -1 });
+            }
+            if idx % 2 == 0 {
+                cnt += 1;
             }
         }
 
         // step 2
-        let mut map2 = String::new();
-        {
-            let last = map.chars().filter(|x| *x != '.').rev().collect::<String>();
-            let mut last_pos = 0;
-            for ch in map.chars() {
-                if ch == '.' {
-                    map2.push(last.chars().nth(last_pos).unwrap());
-                    last_pos += 1;
+        let mut d2 = VecDeque::new();
+        'outer: loop {
+            if let Some(it) = d.pop_front() {
+                if it == -1 {
+                    let mut x1 = 0;
+                    'inner: loop {
+                        if let Some(x2) = d.pop_back() {
+                            if x2 == -1 {
+                                continue;
+                            }
+                            x1 = x2;
+                            break 'inner;
+                        } else {
+                            break 'outer;
+                        }
+                    }
+                    d2.push_back(x1);
                 } else {
-                    map2.push(ch);
+                    d2.push_back(it);
                 }
+            } else {
+                break;
             }
         }
 
         // step 3
-        let dot_count = map.chars().filter(|x| *x == '.').count();
-        // map2.replace_range(map2.len() - dot_count..map2.len(), &".".repeat(dot_count));
-        println!("{}", map2.len());
-        map2.replace_range(map2.len() - dot_count..map2.len(), "");
-        println!("{}", map2.len());
-
-        // step 4
         let mut res = 0;
-        for (i, ch) in map2.chars().enumerate() {
-            res += i as i128 * ch.to_digit(10).unwrap_or(0) as i128;
+        for (idx, it) in d2.iter().enumerate() {
+            res += idx as i128 * it;
         }
         res
     }
