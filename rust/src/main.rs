@@ -6,5 +6,6 @@ fn main() {
     // aoc24::day05::solve();
     // aoc24::day06::solve();
     // aoc24::day07::solve();
-    aoc24::day08::solve();
+    // aoc24::day08::solve();
+    aoc24::day09::solve();
 }
