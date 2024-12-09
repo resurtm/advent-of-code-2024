@@ -11,33 +11,33 @@ impl DiskFragmenter {
     fn new(test_name: String) -> DiskFragmenter {
         DiskFragmenter {
             input: Self::read_input(&test_name),
+            deque: VecDeque::new(),
             part1: 0,
             part2: 0,
             test_name,
         }
     }
 
-    fn solve_internal(&self) -> i128 {
-        // step 1
-        let mut d: VecDeque<i128> = VecDeque::new();
+    fn build_deque(&mut self) {
         let mut cnt = 0;
         for (idx, ch) in self.input.chars().enumerate() {
             for _ in 0..ch.to_digit(10).unwrap_or(0) {
-                d.push_back(if idx % 2 == 0 { cnt } else { -1 });
+                self.deque.push_back(if idx % 2 == 0 { cnt } else { -1 });
             }
             if idx % 2 == 0 {
                 cnt += 1;
             }
         }
+    }
 
-        // step 2
-        let mut d2 = VecDeque::new();
+    fn solve_internal(&mut self) {
+        let mut deque = VecDeque::new();
         'outer: loop {
-            if let Some(it) = d.pop_front() {
+            if let Some(it) = self.deque.pop_front() {
                 if it == -1 {
                     let mut x1 = 0;
                     'inner: loop {
-                        if let Some(x2) = d.pop_back() {
+                        if let Some(x2) = self.deque.pop_back() {
                             if x2 == -1 {
                                 continue;
                             }
@@ -47,25 +47,23 @@ impl DiskFragmenter {
                             break 'outer;
                         }
                     }
-                    d2.push_back(x1);
+                    deque.push_back(x1);
                 } else {
-                    d2.push_back(it);
+                    deque.push_back(it);
                 }
             } else {
                 break;
             }
         }
 
-        // step 3
-        let mut res = 0;
-        for (idx, it) in d2.iter().enumerate() {
-            res += idx as i128 * it;
+        for (idx, it) in deque.iter().enumerate() {
+            self.part1 += idx as i128 * it;
         }
-        res
     }
 
     fn solve(&mut self) -> (i128, i128) {
-        self.part1 = self.solve_internal();
+        self.build_deque();
+        self.solve_internal();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 09, Part 1: {}", self.part1);
@@ -81,6 +79,7 @@ impl DiskFragmenter {
 
 struct DiskFragmenter {
     input: String,
+    deque: VecDeque<i128>,
     part1: i128,
     part2: i128,
     test_name: String,
