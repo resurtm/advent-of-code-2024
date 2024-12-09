@@ -102,16 +102,16 @@ impl ResonantCollinearity {
         }
     }
 
-    fn print_map(&self) {
-        println!("{}", "-".repeat(self.w as usize));
-        for i in 0..self.w {
-            for j in 0..self.h {
-                print!("{}", self.map[i as usize][j as usize]);
-            }
-            println!("");
-        }
-        println!("{}", "-".repeat(self.w as usize));
-    }
+    // fn print_map(&self) {
+    //     println!("{}", "-".repeat(self.w as usize));
+    //     for i in 0..self.w {
+    //         for j in 0..self.h {
+    //             print!("{}", self.map[i as usize][j as usize]);
+    //         }
+    //         println!("");
+    //     }
+    //     println!("{}", "-".repeat(self.w as usize));
+    // }
 
     fn read_input(test_name: &str) -> Vec<Vec<char>> {
         fs::read_to_string(format!("../data/day08/{}.txt", test_name))
