@@ -18,15 +18,17 @@ impl HoofIt {
             w,
             h,
             peaks: HashSet::new(),
+            routes: HashSet::new(),
             part1: 0,
             part2: 0,
             test_name,
         }
     }
 
-    fn traverse(&mut self, i: i32, j: i32, curr: i32) {
+    fn traverse(&mut self, i: i32, j: i32, curr: i32, route: Vec<(i32, i32)>) {
         if curr == 9 {
             self.peaks.insert((i, j));
+            self.routes.insert(route);
             return;
         }
         let dirs: Vec<(i32, i32)> = vec![(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
@@ -36,7 +38,9 @@ impl HoofIt {
             .collect();
         for (x, y) in dirs.iter() {
             if self.map[*x as usize][*y as usize] == curr + 1 {
-                self.traverse(*x, *y, curr + 1);
+                let mut new_route = route.clone();
+                new_route.push((*x, *y));
+                self.traverse(*x, *y, curr + 1, new_route);
             }
         }
     }
@@ -46,8 +50,10 @@ impl HoofIt {
             for j in 0..self.h {
                 if self.map[i as usize][j as usize] == 0 {
                     self.peaks.clear();
-                    self.traverse(i, j, 0);
+                    self.routes.clear();
+                    self.traverse(i, j, 0, vec![]);
                     self.part1 += self.peaks.len() as i32;
+                    self.part2 += self.routes.len() as i32;
                 }
             }
         }
@@ -83,6 +89,7 @@ struct HoofIt {
     w: i32,
     h: i32,
     peaks: HashSet<(i32, i32)>,
+    routes: HashSet<Vec<(i32, i32)>>,
     part1: i32,
     part2: i32,
     test_name: String,
@@ -99,6 +106,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(HoofIt::new(String::from("test0")).solve().1, 0);
+        assert_eq!(HoofIt::new(String::from("test0")).solve().1, 81);
     }
 }
