@@ -1,23 +1,59 @@
 use std::fs;
 
 pub fn solve() {
-    PlutonianPebbles::new(String::from("test0")).solve();
-    // PlutonianPebbles::new(String::from("gh")).solve();
-    // PlutonianPebbles::new(String::from("google")).solve();
+    PlutonianPebbles::new(String::from("gh")).solve(25);
+    // PlutonianPebbles::new(String::from("gh")).solve(75);
+    PlutonianPebbles::new(String::from("google")).solve(25);
+    // PlutonianPebbles::new(String::from("google")).solve(75);
 }
 
 impl PlutonianPebbles {
     fn new(test_name: String) -> PlutonianPebbles {
         PlutonianPebbles {
             input: Self::read_input(&test_name),
+            stones: vec![],
             part1: 0,
             part2: 0,
             test_name,
         }
     }
 
-    fn solve(&mut self) -> (i32, i32) {
-        println!("Input: {:?}", self.input);
+    fn solve_internal(&mut self, blinks: i32) {
+        self.stones = self.input.clone();
+        for _ in 0..blinks {
+            let mut idx = 0;
+            loop {
+                let it = self.stones[idx];
+                let its = it.to_string();
+                if it == 0 {
+                    self.stones[idx] = 1;
+                } else if its.len() % 2 == 0 {
+                    let mut first = its[..its.len() / 2].trim_start_matches('0').to_owned();
+                    if first.len() == 0 {
+                        first = String::from("0");
+                    }
+                    let mut second = its[its.len() / 2..].trim_start_matches('0').to_owned();
+                    if second.len() == 0 {
+                        second = String::from("0");
+                    }
+                    self.stones.remove(idx);
+                    self.stones.insert(idx, second.parse::<i128>().unwrap());
+                    self.stones.insert(idx, first.parse::<i128>().unwrap());
+                    idx += 1;
+                } else {
+                    self.stones[idx] *= 2024;
+                }
+                idx += 1;
+                if idx == self.stones.len() {
+                    break;
+                }
+            }
+        }
+        self.part1 = self.stones.len() as i32;
+    }
+
+    fn solve(&mut self, blinks: i32) -> (i32, i32) {
+        self.solve_internal(blinks);
 
         println!("Test Name: {}", self.test_name);
         println!("Day 11, Part 1: {}", self.part1);
@@ -26,18 +62,19 @@ impl PlutonianPebbles {
         (self.part1, self.part2)
     }
 
-    fn read_input(test_name: &str) -> Vec<i32> {
+    fn read_input(test_name: &str) -> Vec<i128> {
         let raw =
             fs::read_to_string(format!("../data/day11/{}.txt", test_name)).expect("input file");
         raw.split_ascii_whitespace()
             .into_iter()
-            .map(|x| x.parse::<i32>().unwrap_or(-1))
+            .map(|x| x.parse::<i128>().unwrap())
             .collect()
     }
 }
 
 struct PlutonianPebbles {
-    input: Vec<i32>,
+    input: Vec<i128>,
+    stones: Vec<i128>,
     part1: i32,
     part2: i32,
     test_name: String,
@@ -49,14 +86,16 @@ mod tests {
 
     #[test]
     fn test_part1() {
+        assert_eq!(PlutonianPebbles::new(String::from("test0")).solve(1).0, 7);
+        assert_eq!(PlutonianPebbles::new(String::from("test1")).solve(6).0, 22);
         assert_eq!(
-            PlutonianPebbles::new(String::from("test0")).solve().0,
+            PlutonianPebbles::new(String::from("test1")).solve(25).0,
             55312
         );
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(PlutonianPebbles::new(String::from("test0")).solve().1, 0);
+        assert_eq!(PlutonianPebbles::new(String::from("test0")).solve(0).1, 0);
     }
 }
