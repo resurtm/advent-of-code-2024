@@ -10,6 +10,29 @@ pub fn solve() {
 }
 
 impl GardenGroups {
+    fn traverse_regs(&mut self) {
+        for (ch, reg) in self.regs.iter() {
+            let mut viz: HashSet<(i32, i32, i32)> = HashSet::new();
+            for (ii, jj) in reg.iter() {
+                let i = *ii;
+                let j = *jj;
+                let dirs = vec![(i - 1, j, 0), (i + 1, j, 1), (i, j - 1, 2), (i, j + 1, 3)];
+                dirs.iter()
+                    .filter(|(x, y, _)| *x >= 0 && *y >= 0 && *x < self.w && *y < self.h)
+                    .filter(|(x, y, _)| self.inp[*x as usize][*y as usize] != *ch)
+                    .for_each(|(mm, nn, dir)| {
+                        viz.insert((*mm, *nn, *dir));
+                    });
+                dirs.iter()
+                    .filter(|(x, y, _)| !(*x >= 0 && *y >= 0 && *x < self.w && *y < self.h))
+                    .for_each(|(mm, nn, dir)| {
+                        viz.insert((*mm, *nn, *dir));
+                    });
+            }
+            self.part1 += (viz.len() * reg.len()) as i32;
+        }
+    }
+
     fn build_reg(&mut self, ch: char, m: i32, n: i32) {
         let mut reg: HashSet<(i32, i32)> = HashSet::new();
         let mut q = VecDeque::new();
@@ -28,8 +51,7 @@ impl GardenGroups {
                 break;
             }
         }
-        println!("{} - {:?}", ch, reg);
-        self.regs.push(reg);
+        self.regs.push((ch, reg));
     }
 
     fn build_regs(&mut self) {
@@ -44,7 +66,7 @@ impl GardenGroups {
 
     fn solve(&mut self) -> (i32, i32) {
         self.build_regs();
-        // println!("Input: {:?}", self.inp);
+        self.traverse_regs();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 12, Part 1: {}", self.part1);
@@ -94,7 +116,7 @@ struct GardenGroups {
     h: i32,
 
     viz: HashSet<(i32, i32)>,
-    regs: Vec<HashSet<(i32, i32)>>,
+    regs: Vec<(char, HashSet<(i32, i32)>)>,
 
     part1: i32,
     part2: i32,
@@ -107,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(GardenGroups::new(String::from("test0")).solve().0, 0);
+        assert_eq!(GardenGroups::new(String::from("test0")).solve().0, 140);
     }
 
     #[test]
