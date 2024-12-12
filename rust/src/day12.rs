@@ -14,76 +14,90 @@ pub fn solve() {
 impl GardenGroups {
     fn count_sides_internal(&self, points: &HashSet<(i32, i32)>) -> i32 {
         let mut sides = 0;
+        for (ii, jj) in points.iter() {
+            let i = *ii;
+            let j = *jj;
 
-        let mut c: HashSet<i32> = HashSet::new();
-        for x in 0..self.w {
-            let its: Vec<i32> = points
-                .iter()
-                .filter(|it| it.0 == x)
-                .map(|it| it.1)
-                .collect();
+            let mut t = false;
+            let mut r = false;
+            let mut b = false;
+            let mut l = false;
 
-            let mut curr = -1;
-            let mut ch = HashSet::new();
-            for (idx, it) in its.iter().enumerate() {
-                if *it != curr {
-                    curr = *it;
-                    ch.insert(idx as i32);
+            let mut tl = false;
+            let mut tr = false;
+            let mut br = false;
+            let mut bl = false;
+
+            vec![
+                (i, j - 1, 0),
+                (i + 1, j, 1),
+                (i, j + 1, 2),
+                (i - 1, j, 3),
+                (i - 1, j - 1, 4),
+                (i + 1, j - 1, 5),
+                (i + 1, j + 1, 6),
+                (i - 1, j + 1, 7),
+            ]
+            .iter()
+            .map(|(x, y, d)| {
+                (
+                    if *x >= 0 && *y >= 0 && *x < self.w && *y < self.h {
+                        points.contains(&(*x, *y))
+                    } else {
+                        false
+                    },
+                    *d,
+                )
+            })
+            .for_each(|(st, dir)| match dir {
+                0 => t = st,
+                1 => r = st,
+                2 => b = st,
+                3 => l = st,
+                4 => tl = st,
+                5 => tr = st,
+                6 => br = st,
+                7 => bl = st,
+                _ => panic!("not expected"),
+            });
+
+            let not_attached: i32 = if t { 0 } else { 1 }
+                + if r { 0 } else { 1 }
+                + if b { 0 } else { 1 }
+                + if l { 0 } else { 1 };
+
+            sides += match not_attached {
+                4 => 4,
+                3 => 2,
+                2 => {
+                    if t && b || l && r {
+                        0
+                    } else {
+                        1
+                    }
                 }
-            }
-            if ch.len() > 0 && ch.len() % 2 != 0 {
-                ch.insert(its.len() as i32);
-            }
+                _ => 0,
+            };
 
-            if ch.len() > 0 {
-                let diff: HashSet<i32> = ch.iter().filter(|x| !c.contains(x)).map(|x| *x).collect();
-                sides += diff.len() as i32 / 2;
+            if !tl && t && l {
+                sides += 1;
             }
-            c = ch.iter().map(|x| *x).collect();
+            if !tr && t && r {
+                sides += 1;
+            }
+            if !bl && b && l {
+                sides += 1;
+            }
+            if !br && b && r {
+                sides += 1;
+            }
         }
-
-        let mut c: HashSet<i32> = HashSet::new();
-        for y in 0..self.h {
-            let its: Vec<i32> = points
-                .iter()
-                .filter(|it| it.1 == y)
-                .map(|it| it.0)
-                .collect();
-
-            let mut curr = -1;
-            let mut ch = HashSet::new();
-            for (idx, it) in its.iter().enumerate() {
-                if *it != curr {
-                    curr = *it;
-                    ch.insert(idx as i32);
-                }
-            }
-            if ch.len() > 0 && ch.len() % 2 != 0 {
-                ch.insert(its.len() as i32);
-            }
-
-            if ch.len() > 0 {
-                let diff: HashSet<i32> = ch.iter().filter(|x| !c.contains(x)).map(|x| *x).collect();
-                sides += diff.len() as i32 / 2;
-            }
-            c = ch.iter().map(|x| *x).collect();
-        }
-
-        // for y in 0..self.h {
-        //     let its: Vec<i32> = points
-        //         .iter()
-        //         .filter(|it| it.1 == y)
-        //         .map(|it| it.0)
-        //         .collect();
-        // }
-
         sides
     }
 
     fn count_sides(&mut self) {
-        for (ch, reg) in self.regs.iter() {
+        for (_, reg) in self.regs.iter() {
             let sides = self.count_sides_internal(&reg);
-            println!("{} {}", ch, sides);
             self.part2 += sides * reg.len() as i32;
         }
     }
@@ -225,5 +239,7 @@ mod tests {
     fn test_part2() {
         assert_eq!(GardenGroups::new(String::from("test0")).solve().1, 80);
         assert_eq!(GardenGroups::new(String::from("test1")).solve().1, 436);
+        assert_eq!(GardenGroups::new(String::from("test4")).solve().1, 368);
+        assert_eq!(GardenGroups::new(String::from("test5")).solve().1, 236);
     }
 }
