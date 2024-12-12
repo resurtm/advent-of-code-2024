@@ -12,6 +12,82 @@ pub fn solve() {
 }
 
 impl GardenGroups {
+    fn count_sides_internal(&self, points: &HashSet<(i32, i32)>) -> i32 {
+        let mut sides = 0;
+
+        let mut c: HashSet<i32> = HashSet::new();
+        for x in 0..self.w {
+            let its: Vec<i32> = points
+                .iter()
+                .filter(|it| it.0 == x)
+                .map(|it| it.1)
+                .collect();
+
+            let mut curr = -1;
+            let mut ch = HashSet::new();
+            for (idx, it) in its.iter().enumerate() {
+                if *it != curr {
+                    curr = *it;
+                    ch.insert(idx as i32);
+                }
+            }
+            if ch.len() > 0 && ch.len() % 2 != 0 {
+                ch.insert(its.len() as i32);
+            }
+
+            if ch.len() > 0 {
+                let diff: HashSet<i32> = ch.iter().filter(|x| !c.contains(x)).map(|x| *x).collect();
+                sides += diff.len() as i32 / 2;
+            }
+            c = ch.iter().map(|x| *x).collect();
+        }
+
+        let mut c: HashSet<i32> = HashSet::new();
+        for y in 0..self.h {
+            let its: Vec<i32> = points
+                .iter()
+                .filter(|it| it.1 == y)
+                .map(|it| it.0)
+                .collect();
+
+            let mut curr = -1;
+            let mut ch = HashSet::new();
+            for (idx, it) in its.iter().enumerate() {
+                if *it != curr {
+                    curr = *it;
+                    ch.insert(idx as i32);
+                }
+            }
+            if ch.len() > 0 && ch.len() % 2 != 0 {
+                ch.insert(its.len() as i32);
+            }
+
+            if ch.len() > 0 {
+                let diff: HashSet<i32> = ch.iter().filter(|x| !c.contains(x)).map(|x| *x).collect();
+                sides += diff.len() as i32 / 2;
+            }
+            c = ch.iter().map(|x| *x).collect();
+        }
+
+        // for y in 0..self.h {
+        //     let its: Vec<i32> = points
+        //         .iter()
+        //         .filter(|it| it.1 == y)
+        //         .map(|it| it.0)
+        //         .collect();
+        // }
+
+        sides
+    }
+
+    fn count_sides(&mut self) {
+        for (ch, reg) in self.regs.iter() {
+            let sides = self.count_sides_internal(&reg);
+            println!("{} {}", ch, sides);
+            self.part2 += sides * reg.len() as i32;
+        }
+    }
+
     fn traverse_regs(&mut self) {
         for (ch, reg) in self.regs.iter() {
             let mut viz: HashSet<(i32, i32, i32)> = HashSet::new();
@@ -77,6 +153,7 @@ impl GardenGroups {
     fn solve(&mut self) -> (i32, i32) {
         self.build_regs();
         self.traverse_regs();
+        self.count_sides();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 12, Part 1: {}", self.part1);
@@ -146,6 +223,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(GardenGroups::new(String::from("test0")).solve().1, 0);
+        assert_eq!(GardenGroups::new(String::from("test0")).solve().1, 80);
+        assert_eq!(GardenGroups::new(String::from("test1")).solve().1, 436);
     }
 }
