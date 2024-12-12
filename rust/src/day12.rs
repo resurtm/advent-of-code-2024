@@ -5,8 +5,10 @@ use std::{
 
 pub fn solve() {
     GardenGroups::new(String::from("test0")).solve();
-    // GardenGroups::new(String::from("gh")).solve();
-    // GardenGroups::new(String::from("google")).solve();
+    GardenGroups::new(String::from("test1")).solve();
+    GardenGroups::new(String::from("test2")).solve();
+    GardenGroups::new(String::from("gh")).solve();
+    GardenGroups::new(String::from("google")).solve();
 }
 
 impl GardenGroups {
@@ -36,17 +38,25 @@ impl GardenGroups {
     fn build_reg(&mut self, ch: char, m: i32, n: i32) {
         let mut reg: HashSet<(i32, i32)> = HashSet::new();
         let mut q = VecDeque::new();
+
+        self.viz.insert((m, n));
+        reg.insert((m, n));
         q.push_front((m, n));
+
         loop {
             if let Some((i, j)) = q.pop_front() {
-                reg.insert((i, j));
-                self.viz.insert((i, j));
-                vec![(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
+                let its: Vec<(i32, i32)> = vec![(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
                     .iter()
                     .filter(|(x, y)| *x >= 0 && *y >= 0 && *x < self.w && *y < self.h)
                     .filter(|(x, y)| self.inp[*x as usize][*y as usize] == ch)
                     .filter(|x| !reg.contains(x))
-                    .for_each(|x| q.push_back(*x));
+                    .map(|(x, y)| (*x, *y))
+                    .collect();
+                for it in its.iter() {
+                    self.viz.insert(*it);
+                    reg.insert(*it);
+                    q.push_back(*it);
+                }
             } else {
                 break;
             }
@@ -130,6 +140,8 @@ mod tests {
     #[test]
     fn test_part1() {
         assert_eq!(GardenGroups::new(String::from("test0")).solve().0, 140);
+        assert_eq!(GardenGroups::new(String::from("test1")).solve().0, 772);
+        assert_eq!(GardenGroups::new(String::from("test2")).solve().0, 1930);
     }
 
     #[test]
