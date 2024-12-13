@@ -1,17 +1,30 @@
-use std::fs;
-
-use itertools::Itertools;
 use regex::Regex;
+use std::fs;
 
 pub fn solve() {
     ClawContraption::new(String::from("test0")).solve();
-    // ClawContraption::new(String::from("gh")).solve();
-    // ClawContraption::new(String::from("google")).solve();
+    ClawContraption::new(String::from("gh")).solve();
+    ClawContraption::new(String::from("google")).solve();
 }
 
 impl ClawContraption {
+    fn solve_internal(&mut self) {
+        for it in self.inp.iter() {
+            let det = it.a.0 * it.b.1 - it.b.0 * it.a.1;
+            if det == 0 {
+                continue;
+            }
+            let x = (it.p.0 * it.b.1 - it.b.0 * it.p.1) as f64 / det as f64;
+            let y = (it.a.0 * it.p.1 - it.p.0 * it.a.1) as f64 / det as f64;
+            if x.trunc() != x || y.trunc() != y {
+                continue;
+            }
+            self.part1 += x as i32 * 3 + y as i32;
+        }
+    }
+
     fn solve(&mut self) -> (i32, i32) {
-        println!("Input: {:#?}", self.inp);
+        self.solve_internal();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 13, Part 1: {}", self.part1);
@@ -94,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(ClawContraption::new(String::from("test0")).solve().0, 0);
+        assert_eq!(ClawContraption::new(String::from("test0")).solve().0, 480);
     }
 
     #[test]
