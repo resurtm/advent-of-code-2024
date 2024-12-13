@@ -10,5 +10,6 @@ fn main() {
     // aoc24::day09::solve();
     // aoc24::day10::solve();
     // aoc24::day11::solve();
-    aoc24::day12::solve();
+    // aoc24::day12::solve();
+    aoc24::day13::solve();
 }
