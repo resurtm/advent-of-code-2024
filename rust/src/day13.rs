@@ -125,6 +125,9 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(ClawContraption::new(String::from("test0")).solve().1, 0);
+        assert_eq!(
+            ClawContraption::new(String::from("test0")).solve().1,
+            875_318_608_908
+        );
     }
 }
