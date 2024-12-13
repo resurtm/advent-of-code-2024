@@ -8,7 +8,7 @@ pub fn solve() {
 }
 
 impl ClawContraption {
-    fn solve_internal(&mut self) {
+    fn solve_internal(&mut self, part: u8) {
         for it in self.inp.iter() {
             let det = it.a.0 * it.b.1 - it.b.0 * it.a.1;
             if det == 0 {
@@ -19,12 +19,25 @@ impl ClawContraption {
             if x.trunc() != x || y.trunc() != y {
                 continue;
             }
-            self.part1 += x as i32 * 3 + y as i32;
+            match part {
+                0 => self.part1 += x as i128 * 3 + y as i128,
+                1 => self.part2 += x as i128 * 3 + y as i128,
+                _ => panic!("bad part"),
+            }
         }
     }
 
-    fn solve(&mut self) -> (i32, i32) {
-        self.solve_internal();
+    fn adjust(&mut self) {
+        for it in self.inp.iter_mut() {
+            it.p.0 += 10_000_000_000_000;
+            it.p.1 += 10_000_000_000_000;
+        }
+    }
+
+    fn solve(&mut self) -> (i128, i128) {
+        self.solve_internal(0);
+        self.adjust();
+        self.solve_internal(1);
 
         println!("Test Name: {}", self.test_name);
         println!("Day 13, Part 1: {}", self.part1);
@@ -43,20 +56,20 @@ impl ClawContraption {
             .for_each(|x| match x.get(1).unwrap().as_str() {
                 "Button A" => {
                     entry.a = (
-                        x.get(3).unwrap().as_str().parse::<i32>().unwrap(),
-                        x.get(4).unwrap().as_str().parse::<i32>().unwrap(),
+                        x.get(3).unwrap().as_str().parse::<i128>().unwrap(),
+                        x.get(4).unwrap().as_str().parse::<i128>().unwrap(),
                     );
                 }
                 "Button B" => {
                     entry.b = (
-                        x.get(3).unwrap().as_str().parse::<i32>().unwrap(),
-                        x.get(4).unwrap().as_str().parse::<i32>().unwrap(),
+                        x.get(3).unwrap().as_str().parse::<i128>().unwrap(),
+                        x.get(4).unwrap().as_str().parse::<i128>().unwrap(),
                     );
                 }
                 "Prize" => {
                     entry.p = (
-                        x.get(3).unwrap().as_str().parse::<i32>().unwrap(),
-                        x.get(4).unwrap().as_str().parse::<i32>().unwrap(),
+                        x.get(3).unwrap().as_str().parse::<i128>().unwrap(),
+                        x.get(4).unwrap().as_str().parse::<i128>().unwrap(),
                     );
                     res.push(entry.clone());
                     entry = Entry::new();
@@ -89,16 +102,16 @@ impl Entry {
 
 struct ClawContraption {
     inp: Vec<Entry>,
-    part1: i32,
-    part2: i32,
+    part1: i128,
+    part2: i128,
     test_name: String,
 }
 
 #[derive(Clone, Debug)]
 struct Entry {
-    a: (i32, i32),
-    b: (i32, i32),
-    p: (i32, i32),
+    a: (i128, i128),
+    b: (i128, i128),
+    p: (i128, i128),
 }
 
 #[cfg(test)]
