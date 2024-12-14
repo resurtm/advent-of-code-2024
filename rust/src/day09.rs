@@ -103,6 +103,7 @@ impl DiskFragmenter {
         'outer: loop {
             if let Some(it) = self.deque.pop_front() {
                 if it == -1 {
+                    #[allow(unused_assignments)]
                     let mut x1 = 0;
                     'inner: loop {
                         if let Some(x2) = self.deque.pop_back() {
