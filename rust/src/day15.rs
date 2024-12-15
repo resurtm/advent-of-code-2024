@@ -2,17 +2,14 @@ use std::fs;
 
 pub fn solve() {
     // WarehouseWoes::new(String::from("test0")).solve();
-    // WarehouseWoes::new(String::from("test1")).solve();
+    WarehouseWoes::new(String::from("test1")).solve();
     // WarehouseWoes::new(String::from("test2")).solve();
-    WarehouseWoes::new(String::from("gh")).solve();
-    WarehouseWoes::new(String::from("google")).solve();
+    // WarehouseWoes::new(String::from("gh")).solve();
+    // WarehouseWoes::new(String::from("google")).solve();
 }
 
 impl WarehouseWoes {
     fn simulate(&mut self) {
-        self.set_start();
-        // self.print();
-
         for (idx, m) in self.moves.iter().enumerate() {
             let (t, b, l, r) = self.get_sides();
             // println!("{} {} {} {}", t, b, l, r);
@@ -149,8 +146,15 @@ impl WarehouseWoes {
     }
 
     fn solve(&mut self) -> (i32, i32) {
+        self.reset();
+        self.set_start();
         self.simulate();
         self.part1 = self.calculate();
+
+        self.reset();
+        self.widen();
+        self.set_start();
+        self.print();
 
         // println!("Map:\n{:?}", self.map);
         // println!("Moves:\n{:?}", self.moves);
@@ -192,6 +196,39 @@ impl WarehouseWoes {
         }
     }
 
+    fn widen(&mut self) {
+        for i in 0..self.w {
+            let mut new = Vec::new();
+            for j in 0..self.h {
+                match self.map[i as usize][j as usize] {
+                    '#' => {
+                        new.push('#');
+                        new.push('#');
+                    }
+                    'O' => {
+                        new.push('[');
+                        new.push(']');
+                    }
+                    '.' => {
+                        new.push('.');
+                        new.push('.');
+                    }
+                    '@' => {
+                        new.push('@');
+                        new.push('.');
+                    }
+                    _ => panic!("bad char"),
+                }
+            }
+            self.map[i as usize] = new;
+        }
+        self.h = self.map[0].len() as i32;
+    }
+
+    fn reset(&mut self) {
+        self.map = self.mapi.clone();
+    }
+
     fn read_input(test_name: &str) -> (Vec<Vec<char>>, Vec<char>) {
         let raw =
             fs::read_to_string(format!("../data/day15/{}.txt", test_name)).expect("input file");
@@ -217,11 +254,12 @@ impl WarehouseWoes {
     }
 
     fn new(test_name: String) -> WarehouseWoes {
-        let (map, moves) = Self::read_input(&test_name);
-        let w = map.len() as i32;
-        let h = map[0].len() as i32;
+        let (mapi, moves) = Self::read_input(&test_name);
+        let w = mapi.len() as i32;
+        let h = mapi[0].len() as i32;
         WarehouseWoes {
-            map,
+            mapi,
+            map: Vec::new(),
             moves,
             pos: (0, 0),
             w,
@@ -234,6 +272,7 @@ impl WarehouseWoes {
 }
 
 struct WarehouseWoes {
+    mapi: Vec<Vec<char>>,
     map: Vec<Vec<char>>,
     moves: Vec<char>,
     pos: (i32, i32),
