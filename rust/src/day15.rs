@@ -2,13 +2,157 @@ use std::fs;
 
 pub fn solve() {
     // WarehouseWoes::new(String::from("test0")).solve();
-    WarehouseWoes::new(String::from("test1")).solve();
-    // WarehouseWoes::new(String::from("test2")).solve();
+    // WarehouseWoes::new(String::from("test1")).solve();
+    WarehouseWoes::new(String::from("test2")).solve();
+    // WarehouseWoes::new(String::from("test3")).solve();
     // WarehouseWoes::new(String::from("gh")).solve();
     // WarehouseWoes::new(String::from("google")).solve();
 }
 
 impl WarehouseWoes {
+    fn simulate2(&mut self) {
+        println!("initial");
+        self.print();
+
+        for (idx, m) in self.moves.iter().enumerate() {
+            let (t, b, l, r) = self.get_sides();
+
+            match m {
+                '^' => {
+                    if t == '.' {
+                        self.pos.0 -= 1;
+                    } else if t == '[' || t == ']' {
+                        let mut int0 = if t == '[' { self.pos.1 } else { self.pos.1 - 1 };
+                        let mut int1 = if t == ']' { self.pos.1 } else { self.pos.1 + 1 };
+                        let mut z = self.pos.0;
+                        loop {
+                            z -= 1;
+                            let chs = &self.map[z as usize][int0 as usize..int1 as usize + 1];
+                            let all_free = chs.iter().all(|x| *x == '.');
+                            let has_wall = chs.iter().any(|x| *x == '#');
+                            if *chs.first().unwrap() == ']' {
+                                int0 -= 1;
+                            }
+                            if *chs.last().unwrap() == '[' {
+                                int1 += 1;
+                            }
+                            println!("`{:?}` {} {}", chs, chs.len(), all_free);
+                            if all_free {
+                                for w in z..self.pos.0 - 1 {
+                                    for (int_idx, int) in (int0..int1 + 1).enumerate() {
+                                        self.map[w as usize][int as usize] =
+                                            if int_idx % 2 == 0 { '[' } else { ']' };
+                                        self.map[(w + 1) as usize][int as usize] = '.';
+                                    }
+                                    int0 += 1;
+                                    int1 -= 1;
+                                }
+                                self.pos.0 -= 1;
+                                break;
+                            }
+                            if has_wall {
+                                break;
+                            }
+                        }
+                    }
+                }
+                'v' => {
+                    if b == '.' {
+                        self.pos.0 += 1;
+                    } else if b == '[' || b == ']' {
+                        let mut int0 = if t == '[' { self.pos.1 } else { self.pos.1 - 1 };
+                        let mut int1 = if t == ']' { self.pos.1 } else { self.pos.1 + 1 };
+                        let mut z = self.pos.0;
+                        loop {
+                            z += 1;
+                            let chs = &self.map[z as usize][int0 as usize..int1 as usize + 1];
+                            let all_free = chs.iter().all(|x| *x == '.');
+                            let has_wall = chs.iter().any(|x| *x == '#');
+                            if *chs.first().unwrap() == ']' {
+                                int0 -= 1;
+                            }
+                            if *chs.last().unwrap() == '[' {
+                                int1 += 1;
+                            }
+                            println!("`{:?}` {} {}", chs, chs.len(), all_free);
+                            if all_free {
+                                for w in (z..self.pos.0 - 1).rev() {
+                                    for (int_idx, int) in (int0..int1 + 1).enumerate() {
+                                        self.map[w as usize][int as usize] =
+                                            if int_idx % 2 == 0 { '[' } else { ']' };
+                                        self.map[(w + 1) as usize][int as usize] = '.';
+                                    }
+                                    int0 += 1;
+                                    int1 -= 1;
+                                }
+                                self.pos.0 += 1;
+                                break;
+                            }
+                            if has_wall {
+                                break;
+                            }
+                        }
+                    }
+                }
+                '<' => {
+                    if l == '.' {
+                        self.pos.1 -= 1;
+                    } else if l == '[' || l == ']' {
+                        let mut z = self.pos.1;
+                        loop {
+                            z -= 1;
+                            let ch = self.get(self.pos.0, z);
+                            if ch == '.' {
+                                for w in z..self.pos.1 + 1 {
+                                    self.map[self.pos.0 as usize][w as usize] =
+                                        self.map[self.pos.0 as usize][(w + 1) as usize];
+                                }
+                                self.map[self.pos.0 as usize][self.pos.1 as usize] = '.';
+                                self.pos.1 -= 1;
+                                self.map[self.pos.0 as usize][self.pos.1 as usize] = '.';
+                                // println!("{}", z);
+                                break;
+                            } else if ch == '#' {
+                                break;
+                            }
+                        }
+                    }
+                }
+                '>' => {
+                    if r == '.' {
+                        self.pos.1 += 1;
+                    } else if r == '[' || r == ']' {
+                        let mut z = self.pos.1;
+                        loop {
+                            z += 1;
+                            let ch = self.get(self.pos.0, z);
+                            if ch == '.' {
+                                for w in (self.pos.1..z + 1).rev() {
+                                    self.map[self.pos.0 as usize][w as usize] =
+                                        self.map[self.pos.0 as usize][(w - 1) as usize];
+                                }
+                                self.map[self.pos.0 as usize][self.pos.1 as usize] = '.';
+                                self.pos.1 += 1;
+                                self.map[self.pos.0 as usize][self.pos.1 as usize] = '.';
+                                // println!("{}", z);
+                                break;
+                            } else if ch == '#' {
+                                break;
+                            }
+                        }
+                    }
+                }
+                _ => panic!("bad move"),
+            }
+
+            println!("{}", m);
+            self.print();
+            // if idx >= 2 {
+            //     break;
+            // }
+        }
+    }
+
     fn simulate(&mut self) {
         for (idx, m) in self.moves.iter().enumerate() {
             let (t, b, l, r) = self.get_sides();
@@ -154,7 +298,7 @@ impl WarehouseWoes {
         self.reset();
         self.widen();
         self.set_start();
-        self.print();
+        self.simulate2();
 
         // println!("Map:\n{:?}", self.map);
         // println!("Moves:\n{:?}", self.moves);
@@ -180,7 +324,6 @@ impl WarehouseWoes {
     }
 
     fn print(&self) {
-        println!("{}", "-".repeat(self.h as usize));
         for i in 0..self.w {
             for j in 0..self.h {
                 print!(
@@ -194,6 +337,7 @@ impl WarehouseWoes {
             }
             println!();
         }
+        println!("{}", "-".repeat(self.h as usize));
     }
 
     fn widen(&mut self) {
