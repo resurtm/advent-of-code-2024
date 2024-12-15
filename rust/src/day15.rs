@@ -1,20 +1,96 @@
-use std::fs;
+use std::{collections::HashSet, fs};
 
 pub fn solve() {
     // WarehouseWoes::new(String::from("test0")).solve();
     // WarehouseWoes::new(String::from("test1")).solve();
-    WarehouseWoes::new(String::from("test2")).solve();
+    // WarehouseWoes::new(String::from("test2")).solve();
     // WarehouseWoes::new(String::from("test3")).solve();
-    // WarehouseWoes::new(String::from("gh")).solve();
-    // WarehouseWoes::new(String::from("google")).solve();
+    WarehouseWoes::new(String::from("gh")).solve();
+    WarehouseWoes::new(String::from("google")).solve();
 }
 
 impl WarehouseWoes {
-    fn simulate2(&mut self) {
-        println!("initial");
-        self.print();
+    fn find_below(&mut self, x: i32, y: i32) {
+        let c = self.map[x as usize][y as usize];
+        let b = self.map[(x + 1) as usize][y as usize];
+        match b {
+            '[' => {
+                self.viz.insert((x + 1, y, '['));
+                self.viz.insert((x + 1, y + 1, ']'));
+                self.find_below(x + 1, y);
+                self.find_below(x + 1, y + 1);
+            }
+            ']' => {
+                self.viz.insert((x + 1, y, ']'));
+                self.viz.insert((x + 1, y - 1, '['));
+                self.find_below(x + 1, y);
+                self.find_below(x + 1, y - 1);
+            }
+            '.' | '#' => {
+                self.dfs.insert((x, y, c, b));
+            }
+            _ => panic!("bad case"),
+        }
+    }
 
-        for (idx, m) in self.moves.iter().enumerate() {
+    fn find_above(&mut self, x: i32, y: i32) {
+        let c = self.map[x as usize][y as usize];
+        let b = self.map[(x - 1) as usize][y as usize];
+        match b {
+            '[' => {
+                self.viz.insert((x - 1, y, '['));
+                self.viz.insert((x - 1, y + 1, ']'));
+                self.find_above(x - 1, y);
+                self.find_above(x - 1, y + 1);
+            }
+            ']' => {
+                self.viz.insert((x - 1, y, ']'));
+                self.viz.insert((x - 1, y - 1, '['));
+                self.find_above(x - 1, y);
+                self.find_above(x - 1, y - 1);
+            }
+            '.' | '#' => {
+                self.dfs.insert((x, y, c, b));
+            }
+            _ => panic!("bad case"),
+        }
+    }
+
+    fn check_dfs(&self) -> bool {
+        self.dfs.iter().all(|x| x.3 == '.')
+    }
+
+    fn move_dfs_down(&mut self) {
+        for v in self.viz.iter() {
+            self.map[v.0 as usize][v.1 as usize] = '.';
+        }
+        for v in self.viz.iter() {
+            self.map[(v.0 + 1) as usize][v.1 as usize] = v.2;
+        }
+    }
+
+    fn move_dfs_up(&mut self) {
+        for v in self.viz.iter() {
+            self.map[v.0 as usize][v.1 as usize] = '.';
+        }
+        for v in self.viz.iter() {
+            self.map[(v.0 - 1) as usize][v.1 as usize] = v.2;
+        }
+    }
+
+    fn simulate2(&mut self) {
+        // println!("initial");
+        // self.print();
+
+        let mut idx = 0;
+
+        loop {
+            if idx >= self.moves.len() {
+                break;
+            }
+            let m = self.moves.get(idx).unwrap().clone();
+            idx += 1;
+
             let (t, b, l, r) = self.get_sides();
 
             match m {
@@ -22,37 +98,12 @@ impl WarehouseWoes {
                     if t == '.' {
                         self.pos.0 -= 1;
                     } else if t == '[' || t == ']' {
-                        let mut int0 = if t == '[' { self.pos.1 } else { self.pos.1 - 1 };
-                        let mut int1 = if t == ']' { self.pos.1 } else { self.pos.1 + 1 };
-                        let mut z = self.pos.0;
-                        loop {
-                            z -= 1;
-                            let chs = &self.map[z as usize][int0 as usize..int1 as usize + 1];
-                            let all_free = chs.iter().all(|x| *x == '.');
-                            let has_wall = chs.iter().any(|x| *x == '#');
-                            if *chs.first().unwrap() == ']' {
-                                int0 -= 1;
-                            }
-                            if *chs.last().unwrap() == '[' {
-                                int1 += 1;
-                            }
-                            println!("`{:?}` {} {}", chs, chs.len(), all_free);
-                            if all_free {
-                                for w in z..self.pos.0 - 1 {
-                                    for (int_idx, int) in (int0..int1 + 1).enumerate() {
-                                        self.map[w as usize][int as usize] =
-                                            if int_idx % 2 == 0 { '[' } else { ']' };
-                                        self.map[(w + 1) as usize][int as usize] = '.';
-                                    }
-                                    int0 += 1;
-                                    int1 -= 1;
-                                }
-                                self.pos.0 -= 1;
-                                break;
-                            }
-                            if has_wall {
-                                break;
-                            }
+                        self.dfs.clear();
+                        self.viz.clear();
+                        self.find_above(self.pos.0, self.pos.1);
+                        if self.check_dfs() {
+                            self.move_dfs_up();
+                            self.pos.0 -= 1;
                         }
                     }
                 }
@@ -60,37 +111,12 @@ impl WarehouseWoes {
                     if b == '.' {
                         self.pos.0 += 1;
                     } else if b == '[' || b == ']' {
-                        let mut int0 = if t == '[' { self.pos.1 } else { self.pos.1 - 1 };
-                        let mut int1 = if t == ']' { self.pos.1 } else { self.pos.1 + 1 };
-                        let mut z = self.pos.0;
-                        loop {
-                            z += 1;
-                            let chs = &self.map[z as usize][int0 as usize..int1 as usize + 1];
-                            let all_free = chs.iter().all(|x| *x == '.');
-                            let has_wall = chs.iter().any(|x| *x == '#');
-                            if *chs.first().unwrap() == ']' {
-                                int0 -= 1;
-                            }
-                            if *chs.last().unwrap() == '[' {
-                                int1 += 1;
-                            }
-                            println!("`{:?}` {} {}", chs, chs.len(), all_free);
-                            if all_free {
-                                for w in (z..self.pos.0 - 1).rev() {
-                                    for (int_idx, int) in (int0..int1 + 1).enumerate() {
-                                        self.map[w as usize][int as usize] =
-                                            if int_idx % 2 == 0 { '[' } else { ']' };
-                                        self.map[(w + 1) as usize][int as usize] = '.';
-                                    }
-                                    int0 += 1;
-                                    int1 -= 1;
-                                }
-                                self.pos.0 += 1;
-                                break;
-                            }
-                            if has_wall {
-                                break;
-                            }
+                        self.dfs.clear();
+                        self.viz.clear();
+                        self.find_below(self.pos.0, self.pos.1);
+                        if self.check_dfs() {
+                            self.move_dfs_down();
+                            self.pos.0 += 1;
                         }
                     }
                 }
@@ -145,12 +171,15 @@ impl WarehouseWoes {
                 _ => panic!("bad move"),
             }
 
-            println!("{}", m);
-            self.print();
-            // if idx >= 2 {
+            // println!("{}", m);
+            // self.print();
+            // if idx >= 6 {
             //     break;
             // }
         }
+
+        // println!("final");
+        // self.print();
     }
 
     fn simulate(&mut self) {
@@ -281,7 +310,7 @@ impl WarehouseWoes {
         let mut ret = 0;
         for i in 0..self.w {
             for j in 0..self.h {
-                if self.get(i, j) == 'O' {
+                if self.get(i, j) == 'O' || self.get(i, j) == '[' {
                     ret += 100 * i + j;
                 }
             }
@@ -299,6 +328,7 @@ impl WarehouseWoes {
         self.widen();
         self.set_start();
         self.simulate2();
+        self.part2 = self.calculate();
 
         // println!("Map:\n{:?}", self.map);
         // println!("Moves:\n{:?}", self.moves);
@@ -411,6 +441,8 @@ impl WarehouseWoes {
             part1: 0,
             part2: 0,
             test_name,
+            dfs: HashSet::new(),
+            viz: HashSet::new(),
         }
     }
 }
@@ -425,6 +457,8 @@ struct WarehouseWoes {
     part1: i32,
     part2: i32,
     test_name: String,
+    dfs: HashSet<(i32, i32, char, char)>,
+    viz: HashSet<(i32, i32, char)>,
 }
 
 #[cfg(test)]
@@ -439,6 +473,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(WarehouseWoes::new(String::from("test0")).solve().1, 0);
+        assert_eq!(WarehouseWoes::new(String::from("test0")).solve().1, 1751);
+        assert_eq!(WarehouseWoes::new(String::from("test1")).solve().1, 9021);
     }
 }
