@@ -5,6 +5,7 @@ use std::{
 };
 
 pub fn solve() {
+    // ReindeerMaze::new(String::from("test2")).solve();
     ReindeerMaze::new(String::from("test0")).solve();
     ReindeerMaze::new(String::from("test1")).solve();
     ReindeerMaze::new(String::from("gh")).solve();
@@ -12,7 +13,8 @@ pub fn solve() {
 }
 
 impl ReindeerMaze {
-    fn simulate_dijkstra(&self) -> i32 {
+    fn simulate_dijkstra(&self) -> (i32, i32) {
+        // part 1
         let mut viz: HashSet<(i32, i32, Direction)> = HashSet::new();
         let mut dst: HashMap<(i32, i32, Direction), i32> = HashMap::new();
         dst.insert((self.start.0, self.start.1, Direction::East), 0);
@@ -38,16 +40,65 @@ impl ReindeerMaze {
             }
         }
 
-        vec![
+        // part 2
+        let dirs = [
             Direction::North,
             Direction::South,
             Direction::West,
             Direction::East,
-        ]
-        .iter()
-        .map(|x| *dst.get(&(self.end.0, self.end.1, x.clone())).unwrap_or(&0))
-        .min()
-        .unwrap_or(i32::MAX)
+        ];
+        let res = dirs
+            .iter()
+            .map(|x| {
+                (
+                    x.clone(),
+                    *dst.get(&(self.end.0, self.end.1, x.clone())).unwrap_or(&0),
+                )
+            })
+            .min()
+            .unwrap();
+
+        // part 3
+        let mut positions = HashSet::new();
+        positions.insert((self.end.0, self.end.1));
+        let mut visited = HashSet::new();
+        visited.insert((self.end.0, self.end.1, res.0.clone()));
+        let mut deque: VecDeque<(i32, i32, Direction)> = VecDeque::new();
+        deque.push_back((self.end.0, self.end.1, res.0.clone()));
+        let mut counter = 0;
+        loop {
+            if let Some(curr) = deque.pop_front() {
+                for it in viz.iter() {
+                    if curr.2 == Direction::North && it.2 == Direction::South
+                        || curr.2 == Direction::South && it.2 == Direction::North
+                        || curr.2 == Direction::West && it.2 == Direction::East
+                        || curr.2 == Direction::East && it.2 == Direction::West
+                    {
+                        continue;
+                    }
+                    if (curr.0 - it.0).abs() > 1 || (curr.1 - it.1) > 1 {
+                        continue;
+                    }
+                    let diff = dst[&curr] - dst[it];
+                    if (diff == 1 || diff == 1001) && !visited.contains(&it) {
+                        positions.insert((it.0, it.1));
+                        visited.insert(it.clone());
+                        deque.push_back(it.clone());
+                    }
+                }
+                // self.print(&positions);
+            } else {
+                break;
+            }
+            counter += 1;
+            // if counter == 10 {
+            //     break;
+            // }
+        }
+
+        // self.print(&positions);
+        // println!("{:?}", positions.len());
+        (res.1, positions.len() as i32)
     }
 
     fn get_next_nodes(&self, curr: &(i32, i32, Direction)) -> Vec<((i32, i32, Direction), i32)> {
@@ -177,7 +228,9 @@ impl ReindeerMaze {
         // self.print(&route);
         // self.part1 = Self::score(&route);
 
-        self.part1 = self.simulate_dijkstra();
+        let res = self.simulate_dijkstra();
+        self.part1 = res.0;
+        self.part2 = res.1;
 
         println!("Test Name: {}", self.test_name);
         println!("Day 16, Part 1: {}", self.part1);
@@ -186,7 +239,7 @@ impl ReindeerMaze {
         (self.part1, self.part2)
     }
 
-    fn print(&self, route: &[(i32, i32, Direction)]) {
+    fn print(&self, route: &HashSet<(i32, i32)>) {
         let viz: HashSet<(i32, i32)> = route.iter().map(|x| (x.0, x.1)).collect();
         println!("{}", "-".repeat(self.h as usize));
         for i in 0..self.w {
@@ -194,7 +247,7 @@ impl ReindeerMaze {
                 print!(
                     "{}",
                     if viz.contains(&(i, j)) {
-                        'X'
+                        'O'
                     } else {
                         self.map[i as usize][j as usize]
                     }
@@ -285,7 +338,7 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(ReindeerMaze::new(String::from("test0")).solve().1, 0);
-        assert_eq!(ReindeerMaze::new(String::from("test1")).solve().1, 0);
+        assert_eq!(ReindeerMaze::new(String::from("test0")).solve().1, 45);
+        assert_eq!(ReindeerMaze::new(String::from("test1")).solve().1, 64);
     }
 }
