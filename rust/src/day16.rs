@@ -1,16 +1,92 @@
 use std::{
-    collections::{HashSet, VecDeque},
-    fs, usize,
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap, HashSet, VecDeque},
+    fs,
 };
 
 pub fn solve() {
     ReindeerMaze::new(String::from("test0")).solve();
     ReindeerMaze::new(String::from("test1")).solve();
     ReindeerMaze::new(String::from("gh")).solve();
-    // ReindeerMaze::new(String::from("google")).solve();
+    ReindeerMaze::new(String::from("google")).solve();
 }
 
 impl ReindeerMaze {
+    fn simulate_dijkstra(&self) -> i32 {
+        let mut viz: HashSet<(i32, i32, Direction)> = HashSet::new();
+        let mut dst: HashMap<(i32, i32, Direction), i32> = HashMap::new();
+        dst.insert((self.start.0, self.start.1, Direction::East), 0);
+        let mut pq: BinaryHeap<Reverse<(i32, i32, i32, Direction)>> = BinaryHeap::new();
+        pq.push(Reverse((0i32, self.start.0, self.start.1, Direction::East)));
+
+        loop {
+            let curr_raw = pq.pop().unwrap().0;
+            let curr = (curr_raw.1, curr_raw.2, curr_raw.3.clone());
+            viz.insert(curr.clone());
+            for next in self.get_next_nodes(&curr) {
+                if viz.contains(&next.0) {
+                    continue;
+                }
+                let new_dist = *dst.get(&curr).unwrap_or(&i32::MAX) + next.1;
+                if new_dist < *dst.get(&next.0).unwrap_or(&i32::MAX) {
+                    dst.insert(next.0.clone(), new_dist);
+                    pq.push(Reverse((new_dist, next.0 .0, next.0 .1, next.0 .2.clone())));
+                }
+            }
+            if pq.is_empty() {
+                break;
+            }
+        }
+
+        vec![
+            Direction::North,
+            Direction::South,
+            Direction::West,
+            Direction::East,
+        ]
+        .iter()
+        .map(|x| *dst.get(&(self.end.0, self.end.1, x.clone())).unwrap_or(&0))
+        .min()
+        .unwrap_or(i32::MAX)
+    }
+
+    fn get_next_nodes(&self, curr: &(i32, i32, Direction)) -> Vec<((i32, i32, Direction), i32)> {
+        let mut res = Vec::new();
+        match curr.2 {
+            Direction::North | Direction::South => {
+                res.push(((curr.0, curr.1, Direction::West), 1_000));
+                res.push(((curr.0, curr.1, Direction::East), 1_000));
+            }
+            Direction::West | Direction::East => {
+                res.push(((curr.0, curr.1, Direction::North), 1_000));
+                res.push(((curr.0, curr.1, Direction::South), 1_000));
+            }
+        }
+        match curr.2 {
+            Direction::North => {
+                if self.map[(curr.0 - 1) as usize][curr.1 as usize] != '#' {
+                    res.push(((curr.0 - 1, curr.1, Direction::North), 1));
+                }
+            }
+            Direction::South => {
+                if self.map[(curr.0 + 1) as usize][curr.1 as usize] != '#' {
+                    res.push(((curr.0 + 1, curr.1, Direction::South), 1));
+                }
+            }
+            Direction::West => {
+                if self.map[curr.0 as usize][(curr.1 - 1) as usize] != '#' {
+                    res.push(((curr.0, curr.1 - 1, Direction::West), 1));
+                }
+            }
+            Direction::East => {
+                if self.map[curr.0 as usize][(curr.1 + 1) as usize] != '#' {
+                    res.push(((curr.0, curr.1 + 1, Direction::East), 1));
+                }
+            }
+        }
+        res
+    }
+
     fn simulate_bfs(&self) -> Vec<(i32, i32, Direction)> {
         let mut res = Vec::new();
         let mut q = VecDeque::new();
@@ -97,9 +173,11 @@ impl ReindeerMaze {
     }
 
     fn solve(&mut self) -> (i32, i32) {
-        let route = self.simulate_bfs();
+        // let route = self.simulate_bfs();
         // self.print(&route);
-        self.part1 = Self::score(&route);
+        // self.part1 = Self::score(&route);
+
+        self.part1 = self.simulate_dijkstra();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 16, Part 1: {}", self.part1);
@@ -187,7 +265,7 @@ struct ReindeerMaze {
     test_name: String,
 }
 
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd)]
 enum Direction {
     North,
     South,
