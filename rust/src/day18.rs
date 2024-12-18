@@ -1,10 +1,14 @@
 use itertools::Itertools;
-use std::fs;
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap, HashSet},
+    fs,
+};
 
 pub fn solve() {
     RamRun::new(String::from("test0")).solve(12);
     RamRun::new(String::from("gh")).solve(1024);
-    // RamRun::new(String::from("google")).solve(1024);
+    RamRun::new(String::from("google")).solve(1024);
 }
 
 impl RamRun {
@@ -48,7 +52,7 @@ impl RamRun {
         println!("{}", "-".repeat(self.w as usize));
     }
 
-    fn traverse(&mut self, p: &(i32, i32), route: Vec<(i32, i32)>) {
+    fn traverse_dfs(&mut self, p: &(i32, i32), route: Vec<(i32, i32)>) {
         if p.0 == self.w - 1 && p.1 == self.h - 1 {
             if self.route.is_empty() || self.route.len() > route.len() {
                 self.route = route;
@@ -70,16 +74,61 @@ impl RamRun {
         for coord in coords.iter() {
             let mut new_route = route.clone();
             new_route.push(*coord);
-            self.traverse(coord, new_route);
+            self.traverse_dfs(coord, new_route);
         }
+    }
+
+    fn traverse_dijkstra(&self) -> i32 {
+        let start = (0, 0);
+        let end = (self.w - 1, self.h - 1);
+
+        let mut viz: HashSet<(i32, i32)> = HashSet::new();
+        let mut dst: HashMap<(i32, i32), i32> = HashMap::new();
+        dst.insert((start.0, start.1), 0);
+        let mut pq: BinaryHeap<Reverse<(i32, i32, i32)>> = BinaryHeap::new();
+        pq.push(Reverse((0i32, start.0, start.1)));
+
+        loop {
+            let p_raw = pq.pop().unwrap().0;
+            let p = (p_raw.1, p_raw.2);
+            viz.insert((p.0, p.1));
+
+            let its: Vec<(i32, i32)> = [
+                (p.0 - 1, p.1),
+                (p.0 + 1, p.1),
+                (p.0, p.1 - 1),
+                (p.0, p.1 + 1),
+            ]
+            .iter()
+            .filter(|(i, j)| *i >= 0 && *j >= 0 && *i < self.w && *j < self.h)
+            .filter(|(i, j)| self.map[*i as usize][*j as usize] == '.')
+            .map(|(i, j)| (*i, *j))
+            .collect();
+
+            for it in its.iter() {
+                if viz.contains(it) {
+                    continue;
+                }
+                let new_dist = *dst.get(&p).unwrap_or(&i32::MAX) + 1;
+                if new_dist < *dst.get(it).unwrap_or(&i32::MAX) {
+                    dst.insert((it.0, it.1), new_dist);
+                    pq.push(Reverse((new_dist, it.0, it.1)));
+                }
+            }
+            if pq.is_empty() {
+                break;
+            }
+        }
+
+        dst[&end]
     }
 
     fn solve(&mut self, byte_count: i32) -> (i32, i32) {
         self.build_map(byte_count);
-        self.print_map();
-        self.traverse(&(0, 0), vec![(0, 0)]);
+        // self.traverse_dfs(&(0, 0), vec![(0, 0)]);
         // self.print_map();
-        self.part1 = self.route.len() as i32 - 1;
+        // self.part1 = self.route.len() as i32 - 1;
+        self.part1 = self.traverse_dijkstra();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 18, Part 1: {}", self.part1);
