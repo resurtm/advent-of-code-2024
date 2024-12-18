@@ -78,10 +78,7 @@ impl RamRun {
         }
     }
 
-    fn traverse_dijkstra(&self) -> i32 {
-        let start = (0, 0);
-        let end = (self.w - 1, self.h - 1);
-
+    fn traverse_dijkstra(&self, start: (i32, i32), end: (i32, i32)) -> i32 {
         let mut viz: HashSet<(i32, i32)> = HashSet::new();
         let mut dst: HashMap<(i32, i32), i32> = HashMap::new();
         dst.insert((start.0, start.1), 0);
@@ -120,21 +117,47 @@ impl RamRun {
             }
         }
 
-        dst[&end]
+        if dst.contains_key(&end) {
+            dst[&end]
+        } else {
+            i32::MAX
+        }
     }
 
-    fn solve(&mut self, byte_count: i32) -> (i32, i32) {
+    fn find_blocker(&mut self, byte_count: i32) -> String {
+        let coords: Vec<(i32, i32)> = self
+            .coords
+            .iter()
+            .get(byte_count as usize..)
+            .map(|x| (x.0, x.1))
+            .collect();
+        for coord in coords.iter() {
+            // let pre = self.map[coord.0 as usize][coord.1 as usize];
+            self.map[coord.0 as usize][coord.1 as usize] = '#';
+            // self.build_map(byte_count);
+            // println!("{:?}", coord);
+            let res = self.traverse_dijkstra((0, 0), (self.w - 1, self.h - 1));
+            // self.map[coord.0 as usize][coord.1 as usize] = pre;
+            if res == i32::MAX {
+                return format!("{},{}", coord.0, coord.1);
+            }
+        }
+        String::from("N/A")
+    }
+
+    fn solve(&mut self, byte_count: i32) -> (i32, String) {
         self.build_map(byte_count);
         // self.traverse_dfs(&(0, 0), vec![(0, 0)]);
         // self.print_map();
         // self.part1 = self.route.len() as i32 - 1;
-        self.part1 = self.traverse_dijkstra();
+        self.part1 = self.traverse_dijkstra((0, 0), (self.w - 1, self.h - 1));
+        self.part2 = self.find_blocker(byte_count);
 
         println!("Test Name: {}", self.test_name);
         println!("Day 18, Part 1: {}", self.part1);
         println!("Day 18, Part 2: {}", self.part2);
 
-        (self.part1, self.part2)
+        (self.part1, self.part2.clone())
     }
 
     fn read_input(test_name: &str) -> Vec<(i32, i32)> {
@@ -158,7 +181,7 @@ impl RamRun {
             coords,
             route: vec![],
             part1: 0,
-            part2: 0,
+            part2: String::new(),
             test_name,
         }
     }
@@ -171,7 +194,7 @@ struct RamRun {
     coords: Vec<(i32, i32)>,
     route: Vec<(i32, i32)>,
     part1: i32,
-    part2: i32,
+    part2: String,
     test_name: String,
 }
 
@@ -185,6 +208,6 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(RamRun::new(String::from("test0")).solve(12).1, 0);
+        assert_eq!(RamRun::new(String::from("test0")).solve(12).1, "6,1");
     }
 }
