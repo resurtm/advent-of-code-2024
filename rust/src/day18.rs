@@ -201,6 +201,7 @@ struct RamRun {
 #[cfg(test)]
 mod tests {
     use super::RamRun;
+
     #[test]
     fn test_part1() {
         assert_eq!(RamRun::new(String::from("test0")).solve(12).0, 22);
