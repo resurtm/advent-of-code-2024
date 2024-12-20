@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, usize};
 
 pub fn solve() {
     RaceCondition::new(String::from("test0")).solve();
@@ -8,6 +8,7 @@ pub fn solve() {
 
 impl RaceCondition {
     fn solve(&mut self) -> (i128, i128) {
+        self.reset();
         self.print_grid();
 
         println!("Test Name: {}", self.test_name);
@@ -17,10 +18,35 @@ impl RaceCondition {
         (self.part1, self.part2)
     }
 
-    fn print_grid(&self) {
-        println!("{}", "-".repeat(self.w));
+    fn reset(&mut self) {
+        self.grid.clear();
+        self.grid.resize(self.w, vec![]);
+        self.grid.iter_mut().for_each(|x| x.resize(self.h, '.'));
+
+        self.start = (0, 0);
+        self.end = (0, 0);
+
         for j in 0..self.h {
             for i in 0..self.w {
+                match self.input[i][j] {
+                    'S' => {
+                        self.start = (i, j);
+                        self.grid[i][j] = '.';
+                    }
+                    'E' => {
+                        self.end = (i, j);
+                        self.grid[i][j] = '.';
+                    }
+                    x => self.grid[i][j] = x,
+                }
+            }
+        }
+    }
+
+    fn print_grid(&self) {
+        println!("{}", "-".repeat(self.w));
+        for i in 0..self.w {
+            for j in 0..self.h {
                 print!("{}", self.grid[i][j]);
             }
             println!();
@@ -43,11 +69,14 @@ impl RaceCondition {
     }
 
     fn new(test_name: String) -> RaceCondition {
-        let grid = Self::read_input(&test_name);
-        let w = grid.len();
-        let h = grid[0].len();
+        let input = Self::read_input(&test_name);
+        let w = input.len();
+        let h = input[0].len();
         RaceCondition {
-            grid,
+            input,
+            grid: vec![],
+            start: (0, 0),
+            end: (0, 0),
             w,
             h,
             part1: 0,
@@ -58,7 +87,10 @@ impl RaceCondition {
 }
 
 struct RaceCondition {
+    input: Vec<Vec<char>>,
     grid: Vec<Vec<char>>,
+    start: (usize, usize),
+    end: (usize, usize),
     w: usize,
     h: usize,
     part1: i128,
