@@ -39,23 +39,18 @@ impl RaceCondition {
         }
     }
 
-    fn solve_internal(&mut self) -> i32 {
+    fn solve_internal(&mut self, dist: i32) -> i32 {
         self.reset();
         self.dfs(self.start, vec![self.start]);
 
         let mut fr: HashMap<i32, i32> = HashMap::new();
 
         for (ai, (ax, ay)) in self.route.iter().enumerate() {
-            let ps = [
-                (*ax - 2, *ay),
-                (*ax + 2, *ay),
-                (*ax, *ay - 2),
-                (*ax, *ay + 2),
-            ];
-            for p in ps.iter() {
-                if let Some(bi) = self.route.iter().position(|x| x.0 == p.0 && x.1 == p.1) {
-                    if bi > ai {
-                        let diff = bi as i32 - ai as i32 - 2;
+            for (bi, (bx, by)) in self.route.iter().enumerate() {
+                let d = (ax - bx).abs() + (ay - by).abs();
+                if d <= dist {
+                    let diff = bi as i32 - ai as i32 - d;
+                    if diff > 0 {
                         if let Some(ex) = fr.get(&diff) {
                             fr.insert(diff, ex + 1);
                         } else {
@@ -66,10 +61,9 @@ impl RaceCondition {
             }
         }
 
-        // println!("{:#?}", fr);
         let mut res = 0;
         for it in fr.iter().sorted() {
-            // println!("{} - {}", *it.0, *it.1);
+            // println!("{} - {}", it.1, it.0);
             if *it.0 >= 100 {
                 res += *it.1;
             }
@@ -78,7 +72,8 @@ impl RaceCondition {
     }
 
     fn solve(&mut self) -> (i32, i32) {
-        self.part1 = self.solve_internal();
+        self.part1 = self.solve_internal(2);
+        self.part2 = self.solve_internal(20);
 
         println!("Test Name: {}", self.test_name);
         println!("Day 20, Part 1: {}", self.part1);
