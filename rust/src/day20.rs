@@ -1,4 +1,7 @@
-use std::{fs, usize};
+use std::{
+    collections::{HashMap, HashSet},
+    fs, usize,
+};
 
 pub fn solve() {
     RaceCondition::new(String::from("test0")).solve();
@@ -7,9 +10,89 @@ pub fn solve() {
 }
 
 impl RaceCondition {
-    fn solve(&mut self) -> (i128, i128) {
+    fn dfs(&mut self, curr: (usize, usize), route: Vec<(usize, usize)>) {
+        if let Some(last) = route.last() {
+            if *last == self.end {
+                if self.dfs_res == 0 || self.dfs_res > route.len() {
+                    self.dfs_res = route.len();
+                }
+                return;
+            }
+        }
+        let dirs = [
+            (curr.0 as i32 - 1, curr.1 as i32),
+            (curr.0 as i32 + 1, curr.1 as i32),
+            (curr.0 as i32, curr.1 as i32 - 1),
+            (curr.0 as i32, curr.1 as i32 + 1),
+        ];
+        let w = self.w;
+        let h = self.h;
+        let dirs: Vec<(usize, usize)> = dirs
+            .iter()
+            .filter(|x| x.0 >= 0 && x.1 >= 0 && x.0 < w as i32 && x.1 < h as i32)
+            .map(|x| (x.0 as usize, x.1 as usize))
+            .filter(|x| self.grid[x.0][x.1] != '#')
+            .filter(|x| !route.contains(x))
+            .collect();
+        for dir in dirs.iter() {
+            let mut new_route = route.clone();
+            new_route.push(*dir);
+            self.dfs(*dir, new_route);
+        }
+    }
+
+    fn solve_internal(&mut self) {
         self.reset();
-        self.print_grid();
+        self.dfs(self.start, vec![]);
+        let base_res = self.dfs_res;
+        let mut fr: HashMap<usize, HashSet<((usize, usize), (usize, usize))>> = HashMap::new();
+
+        for i in 0..self.w {
+            for j in (0..self.h - 2).step_by(2) {
+                self.reset();
+                self.grid[i][j] = 'x';
+                self.grid[i][j + 1] = 'x';
+                self.dfs(self.start, vec![]);
+                if self.dfs_res != base_res {
+                    let diff = base_res - self.dfs_res;
+                    if let Some(ex) = fr.get_mut(&diff) {
+                        ex.insert(((i, j), (i, j + 1)));
+                    } else {
+                        let mut n = HashSet::new();
+                        n.insert(((i, j), (i, j + 1)));
+                        fr.insert(diff, n);
+                    }
+                }
+            }
+        }
+
+        for i in (0..self.w - 2).step_by(2) {
+            for j in 0..self.h {
+                self.reset();
+                self.grid[i][j] = 'x';
+                self.grid[i + 1][j] = 'x';
+                self.dfs(self.start, vec![]);
+                if self.dfs_res != base_res {
+                    let diff = base_res - self.dfs_res;
+                    if let Some(ex) = fr.get_mut(&diff) {
+                        ex.insert(((i, j), (i + 1, j)));
+                    } else {
+                        let mut n = HashSet::new();
+                        n.insert(((i, j), (i + 1, j)));
+                        fr.insert(diff, n);
+                    }
+                }
+            }
+        }
+
+        for it in fr.iter() {
+            println!("{} {}", it.0, it.1.len());
+        }
+        // println!("{:#?}", fr.get(&64usize).unwrap());
+    }
+
+    fn solve(&mut self) -> (i128, i128) {
+        self.solve_internal();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 20, Part 1: {}", self.part1);
@@ -19,6 +102,8 @@ impl RaceCondition {
     }
 
     fn reset(&mut self) {
+        self.dfs_res = 0;
+
         self.grid.clear();
         self.grid.resize(self.w, vec![]);
         self.grid.iter_mut().for_each(|x| x.resize(self.h, '.'));
@@ -75,10 +160,14 @@ impl RaceCondition {
         RaceCondition {
             input,
             grid: vec![],
+
             start: (0, 0),
             end: (0, 0),
+
+            dfs_res: 0,
             w,
             h,
+
             part1: 0,
             part2: 0,
             test_name,
@@ -89,10 +178,14 @@ impl RaceCondition {
 struct RaceCondition {
     input: Vec<Vec<char>>,
     grid: Vec<Vec<char>>,
+
     start: (usize, usize),
     end: (usize, usize),
+
+    dfs_res: usize,
     w: usize,
     h: usize,
+
     part1: i128,
     part2: i128,
     test_name: String,
