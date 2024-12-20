@@ -1,37 +1,35 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs, usize,
-};
+use itertools::Itertools;
+use std::{collections::HashMap, fs};
 
 pub fn solve() {
     RaceCondition::new(String::from("test0")).solve();
-    // RaceCondition::new(String::from("gh")).solve();
-    // RaceCondition::new(String::from("google")).solve();
+    RaceCondition::new(String::from("gh")).solve();
+    RaceCondition::new(String::from("google")).solve();
 }
 
 impl RaceCondition {
-    fn dfs(&mut self, curr: (usize, usize), route: Vec<(usize, usize)>) {
+    fn dfs(&mut self, curr: (i32, i32), route: Vec<(i32, i32)>) {
         if let Some(last) = route.last() {
             if *last == self.end {
-                if self.dfs_res == 0 || self.dfs_res > route.len() {
-                    self.dfs_res = route.len();
+                if self.route.is_empty() || self.route.len() > route.len() {
+                    self.route = route.clone();
                 }
                 return;
             }
         }
         let dirs = [
-            (curr.0 as i32 - 1, curr.1 as i32),
-            (curr.0 as i32 + 1, curr.1 as i32),
-            (curr.0 as i32, curr.1 as i32 - 1),
-            (curr.0 as i32, curr.1 as i32 + 1),
+            (curr.0 - 1, curr.1),
+            (curr.0 + 1, curr.1),
+            (curr.0, curr.1 - 1),
+            (curr.0, curr.1 + 1),
         ];
         let w = self.w;
         let h = self.h;
-        let dirs: Vec<(usize, usize)> = dirs
+        let dirs: Vec<(i32, i32)> = dirs
             .iter()
-            .filter(|x| x.0 >= 0 && x.1 >= 0 && x.0 < w as i32 && x.1 < h as i32)
-            .map(|x| (x.0 as usize, x.1 as usize))
-            .filter(|x| self.grid[x.0][x.1] != '#')
+            .filter(|x| x.0 >= 0 && x.1 >= 0 && x.0 < w && x.1 < h)
+            .map(|x| (x.0, x.1))
+            .filter(|x| self.grid[x.0 as usize][x.1 as usize] != '#')
             .filter(|x| !route.contains(x))
             .collect();
         for dir in dirs.iter() {
@@ -41,58 +39,46 @@ impl RaceCondition {
         }
     }
 
-    fn solve_internal(&mut self) {
+    fn solve_internal(&mut self) -> i32 {
         self.reset();
-        self.dfs(self.start, vec![]);
-        let base_res = self.dfs_res;
-        let mut fr: HashMap<usize, HashSet<((usize, usize), (usize, usize))>> = HashMap::new();
+        self.dfs(self.start, vec![self.start]);
 
-        for i in 0..self.w {
-            for j in (0..self.h - 2).step_by(2) {
-                self.reset();
-                self.grid[i][j] = 'x';
-                self.grid[i][j + 1] = 'x';
-                self.dfs(self.start, vec![]);
-                if self.dfs_res != base_res {
-                    let diff = base_res - self.dfs_res;
-                    if let Some(ex) = fr.get_mut(&diff) {
-                        ex.insert(((i, j), (i, j + 1)));
-                    } else {
-                        let mut n = HashSet::new();
-                        n.insert(((i, j), (i, j + 1)));
-                        fr.insert(diff, n);
+        let mut fr: HashMap<i32, i32> = HashMap::new();
+
+        for (ai, (ax, ay)) in self.route.iter().enumerate() {
+            let ps = [
+                (*ax - 2, *ay),
+                (*ax + 2, *ay),
+                (*ax, *ay - 2),
+                (*ax, *ay + 2),
+            ];
+            for p in ps.iter() {
+                if let Some(bi) = self.route.iter().position(|x| x.0 == p.0 && x.1 == p.1) {
+                    if bi > ai {
+                        let diff = bi as i32 - ai as i32 - 2;
+                        if let Some(ex) = fr.get(&diff) {
+                            fr.insert(diff, ex + 1);
+                        } else {
+                            fr.insert(diff, 1);
+                        }
                     }
                 }
             }
         }
 
-        for i in (0..self.w - 2).step_by(2) {
-            for j in 0..self.h {
-                self.reset();
-                self.grid[i][j] = 'x';
-                self.grid[i + 1][j] = 'x';
-                self.dfs(self.start, vec![]);
-                if self.dfs_res != base_res {
-                    let diff = base_res - self.dfs_res;
-                    if let Some(ex) = fr.get_mut(&diff) {
-                        ex.insert(((i, j), (i + 1, j)));
-                    } else {
-                        let mut n = HashSet::new();
-                        n.insert(((i, j), (i + 1, j)));
-                        fr.insert(diff, n);
-                    }
-                }
+        // println!("{:#?}", fr);
+        let mut res = 0;
+        for it in fr.iter().sorted() {
+            // println!("{} - {}", *it.0, *it.1);
+            if *it.0 >= 100 {
+                res += *it.1;
             }
         }
-
-        for it in fr.iter() {
-            println!("{} {}", it.0, it.1.len());
-        }
-        // println!("{:#?}", fr.get(&64usize).unwrap());
+        res
     }
 
-    fn solve(&mut self) -> (i128, i128) {
-        self.solve_internal();
+    fn solve(&mut self) -> (i32, i32) {
+        self.part1 = self.solve_internal();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 20, Part 1: {}", self.part1);
@@ -102,41 +88,43 @@ impl RaceCondition {
     }
 
     fn reset(&mut self) {
-        self.dfs_res = 0;
+        self.route.clear();
 
         self.grid.clear();
-        self.grid.resize(self.w, vec![]);
-        self.grid.iter_mut().for_each(|x| x.resize(self.h, '.'));
+        self.grid.resize(self.w as usize, vec![]);
+        self.grid
+            .iter_mut()
+            .for_each(|x| x.resize(self.h as usize, '.'));
 
         self.start = (0, 0);
         self.end = (0, 0);
 
         for j in 0..self.h {
             for i in 0..self.w {
-                match self.input[i][j] {
+                match self.input[i as usize][j as usize] {
                     'S' => {
                         self.start = (i, j);
-                        self.grid[i][j] = '.';
+                        self.grid[i as usize][j as usize] = '.';
                     }
                     'E' => {
                         self.end = (i, j);
-                        self.grid[i][j] = '.';
+                        self.grid[i as usize][j as usize] = '.';
                     }
-                    x => self.grid[i][j] = x,
+                    x => self.grid[i as usize][j as usize] = x,
                 }
             }
         }
     }
 
     fn print_grid(&self) {
-        println!("{}", "-".repeat(self.w));
+        println!("{}", "-".repeat(self.w as usize));
         for i in 0..self.w {
             for j in 0..self.h {
-                print!("{}", self.grid[i][j]);
+                print!("{}", self.grid[i as usize][j as usize]);
             }
             println!();
         }
-        println!("{}", "-".repeat(self.w));
+        println!("{}", "-".repeat(self.w as usize));
     }
 
     fn read_input(test_name: &str) -> Vec<Vec<char>> {
@@ -155,8 +143,8 @@ impl RaceCondition {
 
     fn new(test_name: String) -> RaceCondition {
         let input = Self::read_input(&test_name);
-        let w = input.len();
-        let h = input[0].len();
+        let w = input.len() as i32;
+        let h = input[0].len() as i32;
         RaceCondition {
             input,
             grid: vec![],
@@ -164,7 +152,7 @@ impl RaceCondition {
             start: (0, 0),
             end: (0, 0),
 
-            dfs_res: 0,
+            route: vec![],
             w,
             h,
 
@@ -179,15 +167,15 @@ struct RaceCondition {
     input: Vec<Vec<char>>,
     grid: Vec<Vec<char>>,
 
-    start: (usize, usize),
-    end: (usize, usize),
+    start: (i32, i32),
+    end: (i32, i32),
 
-    dfs_res: usize,
-    w: usize,
-    h: usize,
+    route: Vec<(i32, i32)>,
+    w: i32,
+    h: i32,
 
-    part1: i128,
-    part2: i128,
+    part1: i32,
+    part2: i32,
     test_name: String,
 }
 
