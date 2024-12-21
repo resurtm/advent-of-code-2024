@@ -10,7 +10,16 @@ pub fn solve() {
 }
 
 impl KeypadConundrum {
-    fn bfs_keypad1(&self, src: char, dst: char) -> Vec<Vec<(i32, i32)>> {
+    fn bfs_keypad1(
+        &self,
+        src: char,
+        dst: char,
+        cache1: &mut HashMap<(char, char), Vec<String>>,
+    ) -> Vec<String> {
+        if let Some(existing) = cache1.get(&(src, dst)) {
+            return existing.clone();
+        }
+
         let mut routes: Vec<Vec<(i32, i32)>> = vec![];
 
         let mut queue: VecDeque<Vec<(i32, i32)>> = VecDeque::new();
@@ -46,40 +55,23 @@ impl KeypadConundrum {
         let mut res = vec![];
         for route in routes.iter() {
             if route.len() == min_route {
-                res.push(route.clone());
+                res.push(Self::route_to_chars(route));
             }
         }
+        cache1.insert((src, dst), res.clone());
         res
     }
 
-    fn push_keypad1(&self, items: &str) -> Vec<String> {
-        let mut routes: Vec<Vec<(i32, i32)>> = vec![];
-        let mut curr_item = 'A';
-
-        for item in items.chars() {
-            let calc_routes = self.bfs_keypad1(curr_item, item);
-
-            let mut next_routes = vec![];
-            for calc_route in calc_routes.iter() {
-                if routes.is_empty() {
-                    next_routes.push(calc_route.clone());
-                } else {
-                    for route in routes.iter() {
-                        let mut next_route = route.clone();
-                        next_route.extend(calc_route);
-                        next_routes.push(next_route);
-                    }
-                }
-            }
-            routes = next_routes;
-
-            curr_item = item;
+    fn bfs_keypad0(
+        &self,
+        src: char,
+        dst: char,
+        cache0: &mut HashMap<(char, char), Vec<String>>,
+    ) -> Vec<String> {
+        if let Some(existing) = cache0.get(&(src, dst)) {
+            return existing.clone();
         }
 
-        routes.iter().map(|x| Self::route_to_chars(x)).collect()
-    }
-
-    fn bfs_keypad0(&self, src: char, dst: char) -> Vec<Vec<(i32, i32)>> {
         let mut routes: Vec<Vec<(i32, i32)>> = vec![];
 
         let mut queue: VecDeque<Vec<(i32, i32)>> = VecDeque::new();
@@ -115,41 +107,15 @@ impl KeypadConundrum {
         let mut res = vec![];
         for route in routes.iter() {
             if route.len() == min_route {
-                res.push(route.clone());
+                res.push(Self::route_to_chars(route));
             }
         }
+        cache0.insert((src, dst), res.clone());
         res
     }
 
-    fn push_keypad0(&self, items: &str) -> Vec<String> {
-        let mut routes: Vec<Vec<(i32, i32)>> = vec![];
-        let mut curr_item = 'A';
-
-        for item in items.chars() {
-            let calc_routes = self.bfs_keypad0(curr_item, item);
-
-            let mut next_routes = vec![];
-            for calc_route in calc_routes.iter() {
-                if routes.is_empty() {
-                    next_routes.push(calc_route.clone());
-                } else {
-                    for route in routes.iter() {
-                        let mut next_route = route.clone();
-                        next_route.extend(calc_route);
-                        next_routes.push(next_route);
-                    }
-                }
-            }
-            routes = next_routes;
-
-            curr_item = item;
-        }
-
-        routes.iter().map(|x| Self::route_to_chars(x)).collect()
-    }
-
     fn route_to_chars(route: &[(i32, i32)]) -> String {
-        let mut res = String::new();
+        let mut res = String::from("A");
         for idx in 0..route.len() - 1 {
             let curr = route[idx];
             let next = route[idx + 1];
@@ -169,49 +135,88 @@ impl KeypadConundrum {
         res
     }
 
-    fn calc_input_item(&self, input_item: &str) -> i32 {
-        let pushes0 = self.push_keypad0(input_item);
-
-        let mut pushes1_min = 0;
-        let mut pushes1 = vec![];
-        for push0 in pushes0.iter() {
-            let xs = self.push_keypad1(push0);
-            for x in xs.iter() {
-                if pushes1_min == 0 || pushes1_min > x.len() {
-                    pushes1_min = x.len();
-                }
-                pushes1.push(x.clone());
-            }
+    fn launch1(
+        &self,
+        item: String,
+        cache0: &mut HashMap<(char, char), Vec<String>>,
+        cache1: &mut HashMap<(char, char), Vec<String>>,
+        cache2: &mut HashMap<(String, i128), i128>,
+        depth: i128,
+    ) -> i128 {
+        if let Some(existing) = cache2.get(&(item.clone(), depth)) {
+            return *existing;
         }
-
-        let mut pushes2_min = 0;
-        let mut pushes2 = vec![];
-        for push1 in pushes1.iter() {
-            if push1.len() > pushes1_min {
-                continue;
-            }
-            let xs = self.push_keypad1(push1);
-            for x in xs.iter() {
-                if pushes2_min == 0 || pushes2_min > x.len() {
-                    pushes2_min = x.len();
-                }
-                pushes2.push(x.clone());
-            }
+        if depth == 0 {
+            return item.len() as i128 - 1;
         }
-
-        pushes2_min as i32
+        let mut cost = 0;
+        let chs = item.chars().collect::<Vec<char>>();
+        for idx in 0..chs.len() - 1 {
+            let mut min = 0;
+            let subs = self.bfs_keypad1(chs[idx], chs[idx + 1], cache0);
+            for sub in subs.iter() {
+                let sub_curr = self.launch1(sub.clone(), cache0, cache1, cache2, depth - 1);
+                if min == 0 || min > sub_curr {
+                    min = sub_curr;
+                }
+            }
+            cost += min;
+        }
+        cache2.insert((item.clone(), depth), cost);
+        cost
     }
 
-    fn solve(&mut self) -> (i32, i32) {
-        for x in self.input.iter() {
-            let a = self.calc_input_item(x);
-            let b = x
+    fn launch0(
+        &self,
+        itemr: String,
+        cache0: &mut HashMap<(char, char), Vec<String>>,
+        cache1: &mut HashMap<(char, char), Vec<String>>,
+        cache2: &mut HashMap<(String, i128), i128>,
+        depth: i128,
+    ) -> i128 {
+        let mut item = itemr;
+        item.insert_str(0, "A");
+        let mut cost = 0;
+        let chs = item.chars().collect::<Vec<char>>();
+        for idx in 0..chs.len() - 1 {
+            let mut min = 0;
+            let subs = self.bfs_keypad0(chs[idx], chs[idx + 1], cache0);
+            for sub in subs.iter() {
+                let sub_curr = self.launch1(sub.clone(), cache0, cache1, cache2, depth);
+                if min == 0 || min > sub_curr {
+                    min = sub_curr;
+                }
+            }
+            cost += min;
+        }
+        cost
+    }
+
+    fn solve(&mut self) -> (i128, i128) {
+        let mut cache0: HashMap<(char, char), Vec<String>> = HashMap::new();
+        let mut cache1: HashMap<(char, char), Vec<String>> = HashMap::new();
+        let mut cache2: HashMap<(String, i128), i128> = HashMap::new();
+
+        for it in self.input.iter() {
+            let a = self.launch0(it.clone(), &mut cache0, &mut cache1, &mut cache2, 2);
+            let b = it
                 .chars()
                 .filter(|x| '0' <= *x && *x <= '9')
                 .collect::<String>()
-                .parse::<i32>()
+                .parse::<i128>()
                 .unwrap_or(0);
             self.part1 += a * b;
+        }
+
+        for it in self.input.iter() {
+            let a = self.launch0(it.clone(), &mut cache0, &mut cache1, &mut cache2, 25);
+            let b = it
+                .chars()
+                .filter(|x| '0' <= *x && *x <= '9')
+                .collect::<String>()
+                .parse::<i128>()
+                .unwrap_or(0);
+            self.part2 += a * b;
         }
 
         println!("Test Name: {}", self.test_name);
@@ -257,8 +262,12 @@ impl KeypadConundrum {
 
         KeypadConundrum {
             input,
+
             keypad0,
+            cache0: HashMap::new(),
+
             keypad1,
+            cache1: HashMap::new(),
 
             part1: 0,
             part2: 0,
@@ -269,11 +278,15 @@ impl KeypadConundrum {
 
 struct KeypadConundrum {
     input: Vec<String>,
-    keypad0: HashMap<char, (i32, i32)>,
-    keypad1: HashMap<char, (i32, i32)>,
 
-    part1: i32,
-    part2: i32,
+    keypad0: HashMap<char, (i32, i32)>,
+    cache0: HashMap<(char, char), Vec<String>>,
+
+    keypad1: HashMap<char, (i32, i32)>,
+    cache1: HashMap<(char, char), Vec<String>>,
+
+    part1: i128,
+    part2: i128,
     test_name: String,
 }
 
@@ -283,11 +296,17 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(KeypadConundrum::new(String::from("test0")).solve().0, 0);
+        assert_eq!(
+            KeypadConundrum::new(String::from("test0")).solve().0,
+            126_384
+        );
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(KeypadConundrum::new(String::from("test0")).solve().1, 0);
+        assert_eq!(
+            KeypadConundrum::new(String::from("test0")).solve().1,
+            154_115_708_116_294
+        );
     }
 }
