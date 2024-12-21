@@ -7,12 +7,12 @@ pub fn solve() {
 }
 
 impl KeypadConundrum {
-    fn simulate(&self, actions: &str) -> String {
-        let mut pos = self.keypad0[&'A'];
+    fn simulate(actions: &str, keypad: &HashMap<char, (i32, i32)>) -> String {
+        let mut pos = keypad[&'A'];
         let mut res = vec![];
 
         for action in actions.chars() {
-            let dst = self.keypad0[&action];
+            let dst = keypad[&action];
             let diff = (dst.0 - pos.0, dst.1 - pos.1);
 
             match diff.1.cmp(&0) {
@@ -43,9 +43,32 @@ impl KeypadConundrum {
         res_str
     }
 
+    fn code_nums(code: &str) -> i32 {
+        code.chars()
+            .filter(|&x| x >= '0' && x <= '9')
+            .collect::<String>()
+            .parse::<i32>()
+            .unwrap_or(0)
+    }
+
+    fn solve_internal(&self) -> i32 {
+        let mut res = 0;
+        for input in self.input.iter() {
+            let pushes0 = Self::simulate(input, &self.keypad0);
+            let pushes1 = Self::simulate(&pushes0, &self.keypad1);
+            let pushes2 = Self::simulate(&pushes1, &self.keypad1);
+
+            let a = pushes2.len() as i32;
+            let b = Self::code_nums(input);
+
+            println!("{} {} {}", a, b, a * b);
+            res += a * b;
+        }
+        res
+    }
+
     fn solve(&mut self) -> (i32, i32) {
-        // println!("Input: {:#?}", self.input);
-        println!("{}", self.simulate(&self.input[0]));
+        self.part1 = self.solve_internal();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 21, Part 1: {}", self.part1);
@@ -78,9 +101,18 @@ impl KeypadConundrum {
             ('0', (1, 3)),
             ('A', (2, 3)),
         ]);
+        let keypad1 = HashMap::from([
+            ('^', (1, 0)),
+            ('A', (2, 0)),
+            ('<', (0, 1)),
+            ('v', (1, 1)),
+            ('>', (2, 1)),
+        ]);
+
         KeypadConundrum {
             input,
             keypad0,
+            keypad1,
 
             part1: 0,
             part2: 0,
@@ -92,6 +124,7 @@ impl KeypadConundrum {
 struct KeypadConundrum {
     input: Vec<String>,
     keypad0: HashMap<char, (i32, i32)>,
+    keypad1: HashMap<char, (i32, i32)>,
 
     part1: i32,
     part2: i32,
