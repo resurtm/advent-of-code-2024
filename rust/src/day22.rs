@@ -1,7 +1,11 @@
-use std::fs;
+use std::{
+    collections::{HashMap, HashSet},
+    fs,
+};
 
 pub fn solve() {
     MonkeyMarket::new(String::from("test0")).solve();
+    MonkeyMarket::new(String::from("test1")).solve();
     MonkeyMarket::new(String::from("gh")).solve();
     MonkeyMarket::new(String::from("google")).solve();
 }
@@ -16,7 +20,7 @@ impl MonkeyMarket {
         secret
     }
 
-    fn solve_internal(&self) -> i128 {
+    fn solve_part1(&self) -> i128 {
         let mut ret = 0;
         for &it in self.input.iter() {
             let mut secret = it;
@@ -24,13 +28,47 @@ impl MonkeyMarket {
                 secret = Self::process_secret(secret);
             }
             ret += secret;
-            // println!("{}: {}", it, secret);
         }
         ret
     }
 
+    fn solve_part2(&self) -> i128 {
+        let mut patterns: HashMap<Vec<i128>, i128> = HashMap::new();
+        let mut checked: HashSet<Vec<i128>> = HashSet::new();
+
+        for &it in self.input.iter() {
+            let mut secret = it;
+            let mut changes = vec![];
+            let mut change = 0i128;
+            for _ in 0..2000 + 1 {
+                changes.push((secret % 10, change));
+                let new_secret = Self::process_secret(secret);
+                change = new_secret % 10 - secret % 10;
+                secret = new_secret;
+            }
+
+            checked.clear();
+            for idx in 0..changes.len() - 3 {
+                let pattern = changes[idx..idx + 4]
+                    .iter()
+                    .map(|x| x.1)
+                    .collect::<Vec<i128>>();
+                if !checked.contains(&pattern) {
+                    checked.insert(pattern.clone());
+                    let curr = patterns.get(&pattern).unwrap_or(&0);
+                    patterns.insert(pattern, curr + changes[idx + 3].0);
+                }
+            }
+        }
+
+        let res = patterns.iter().max_by(|x, y| x.1.cmp(y.1)).unwrap();
+        // println!("{:?}", res);
+        *res.1
+    }
+
     fn solve(&mut self) -> (i128, i128) {
-        self.part1 = self.solve_internal();
+        self.part1 = self.solve_part1();
+        self.part2 = self.solve_part2();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 22, Part 1: {}", self.part1);
@@ -72,11 +110,14 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(MonkeyMarket::new(String::from("test0")).solve().0, 0);
+        assert_eq!(
+            MonkeyMarket::new(String::from("test0")).solve().0,
+            37_327_623
+        );
     }
 
     #[test]
     fn test_part2() {
-        assert_eq!(MonkeyMarket::new(String::from("test0")).solve().1, 0);
+        assert_eq!(MonkeyMarket::new(String::from("test1")).solve().1, 23);
     }
 }
