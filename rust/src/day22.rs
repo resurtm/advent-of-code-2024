@@ -2,13 +2,36 @@ use std::fs;
 
 pub fn solve() {
     MonkeyMarket::new(String::from("test0")).solve();
-    // MonkeyMarket::new(String::from("gh")).solve();
-    // MonkeyMarket::new(String::from("google")).solve();
+    MonkeyMarket::new(String::from("gh")).solve();
+    MonkeyMarket::new(String::from("google")).solve();
 }
 
 impl MonkeyMarket {
+    fn process_secret(inp: i128) -> i128 {
+        let prune_const = 16_777_216;
+        let mut secret = inp;
+        secret = ((secret * 64) ^ secret) % prune_const;
+        secret = ((secret / 32) ^ secret) % prune_const;
+        secret = ((secret * 2048) ^ secret) % prune_const;
+        secret
+    }
+
+    fn solve_internal(&self) -> i128 {
+        let mut ret = 0;
+        for &it in self.input.iter() {
+            let mut secret = it;
+            for _ in 0..2000 {
+                secret = Self::process_secret(secret);
+            }
+            ret += secret;
+            // println!("{}: {}", it, secret);
+        }
+        ret
+    }
+
     fn solve(&mut self) -> (i128, i128) {
-        println!("Input: {:?}", self.input);
+        self.part1 = self.solve_internal();
+
         println!("Test Name: {}", self.test_name);
         println!("Day 22, Part 1: {}", self.part1);
         println!("Day 22, Part 2: {}", self.part2);
