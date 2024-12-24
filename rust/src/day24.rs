@@ -1,17 +1,37 @@
-use std::fs;
+use std::{collections::VecDeque, fs};
 
 pub fn solve() {
     CrossedWires::new(String::from("test0")).solve();
-    // CrossedWires::new(String::from("test1")).solve();
+    CrossedWires::new(String::from("test1")).solve();
     // CrossedWires::new(String::from("gh")).solve();
     // CrossedWires::new(String::from("google")).solve();
 }
 
 impl CrossedWires {
+    fn solve_internal(&mut self) {
+        let mut queue = VecDeque::new();
+        self.inp_wires
+            .iter()
+            .for_each(|x| queue.push_back((x.0.to_owned(), x.1)));
+        while !queue.is_empty() {
+            if let Some(curr) = queue.pop_front() {
+                for gate in self.gates.iter_mut() {
+                    if gate.inp0 == curr.0 && gate.inp0v.is_none() {
+                        gate.inp0v = Some(curr.1);
+                    } else if gate.inp1 == curr.0 && gate.inp1v.is_none() {
+                        gate.inp1v = Some(curr.1);
+                    }
+                    if gate.recalc() {
+                        queue.push_back((gate.out.to_owned(), gate.outv.unwrap()));
+                    }
+                }
+            }
+        }
+    }
+
     fn solve(&mut self) -> (i32, i32) {
-        println!("Wires: {:?}", self.inp_wires);
-        println!("Gates: {:?}", self.inp_gates);
-        println!("Gates: {:?}", self.gates);
+        self.solve_internal();
+        println!("Gates: {:#?}", self.gates);
 
         println!("Test Name: {}", self.test_name);
         println!("Day 24, Part 1: {}", self.part1);
@@ -89,6 +109,23 @@ struct CrossedWires {
     part1: i32,
     part2: i32,
     test_name: String,
+}
+
+impl Gate {
+    fn recalc(&mut self) -> bool {
+        let mut changed = false;
+        if let (Some(v0), Some(v1)) = (self.inp0v, self.inp1v) {
+            if self.outv.is_none() {
+                self.outv = Some(match self.op {
+                    Operation::And => v0 & v1,
+                    Operation::Or => v0 | v1,
+                    Operation::Xor => v0 ^ v1,
+                });
+                changed = true;
+            }
+        }
+        changed
+    }
 }
 
 #[derive(Debug)]
