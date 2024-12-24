@@ -108,8 +108,8 @@ impl LanParty {
         self.part2 = self.solve_internal_part2();
 
         println!("Test Name: {}", self.test_name);
-        println!("Day 22, Part 1: {}", self.part1);
-        println!("Day 22, Part 2: {}", self.part2);
+        println!("Day 23, Part 1: {}", self.part1);
+        println!("Day 23, Part 2: {}", self.part2);
 
         (self.part1, self.part2.clone())
     }
