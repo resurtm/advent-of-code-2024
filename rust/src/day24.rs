@@ -1,25 +1,20 @@
+use itertools::Itertools;
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fs,
 };
-
-use itertools::Itertools;
 
 pub fn solve() {
     CrossedWires::new(String::from("test0")).solve();
     CrossedWires::new(String::from("test1")).solve();
+    CrossedWires::new(String::from("test2")).solve();
     CrossedWires::new(String::from("gh")).solve();
     CrossedWires::new(String::from("google")).solve();
 }
 
 impl CrossedWires {
     fn solve_internal(&mut self) -> i128 {
-        let mut vals: HashMap<String, Option<bool>> = HashMap::new();
-        self.gates.iter().for_each(|x| {
-            vals.insert(x.inp0.to_owned(), None);
-            vals.insert(x.inp1.to_owned(), None);
-            vals.insert(x.out.to_owned(), None);
-        });
+        let mut regs = self.build_regs();
 
         let mut queue = VecDeque::new();
         self.inp_wires
@@ -27,7 +22,7 @@ impl CrossedWires {
             .for_each(|x| queue.push_back((x.0.to_owned(), x.1)));
         while !queue.is_empty() {
             if let Some(curr) = queue.pop_front() {
-                vals.insert(curr.0.to_owned(), Some(curr.1));
+                regs.insert(curr.0.to_owned(), Some(curr.1));
                 for gate in self.gates.iter_mut() {
                     if gate.inp0 == curr.0 && gate.inp0v.is_none() {
                         gate.inp0v = Some(curr.1);
@@ -41,25 +36,93 @@ impl CrossedWires {
             }
         }
 
-        let mut vals: Vec<_> = vals.iter().collect();
-        vals.sort_by(|x, y| x.0.cmp(y.0));
-        let val = vals
+        Self::parse_regs(&regs, "z")
+    }
+
+    fn build_regs(&self) -> HashMap<String, Option<bool>> {
+        let mut regs: HashMap<String, Option<bool>> = HashMap::new();
+        self.gates.iter().for_each(|x| {
+            regs.insert(x.inp0.to_owned(), None);
+            regs.insert(x.inp1.to_owned(), None);
+            regs.insert(x.out.to_owned(), None);
+        });
+        self.inp_wires.iter().for_each(|x| {
+            regs.insert(x.0.to_owned(), Some(x.1));
+        });
+        regs
+    }
+
+    fn parse_regs(regs: &HashMap<String, Option<bool>>, prefix: &str) -> i128 {
+        let mut regs: Vec<_> = regs.iter().collect();
+        regs.sort_by(|x, y| x.0.cmp(y.0));
+        let val = regs
             .iter()
-            .filter(|x| x.0.starts_with("z"))
-            .map(|x| if x.1.unwrap() { '1' } else { '0' })
+            .filter(|x| x.0.starts_with(prefix))
+            .map(|x| if x.1.unwrap_or(false) { '1' } else { '0' })
             .rev()
             .join("");
         i128::from_str_radix(&val, 2).unwrap()
     }
 
-    fn solve(&mut self) -> (i128, i128) {
+    fn solve_wrong_gates(&mut self) -> String {
+        let mut highest_z = String::from("z00");
+        for g in self.gates.iter() {
+            if g.out.starts_with("z") && g.out > highest_z {
+                highest_z = g.out.to_owned();
+            }
+        }
+
+        let mut wrong = HashSet::new();
+        for (op, inp0, inp1, out) in self.inp_gates.iter() {
+            if out.starts_with("z") && op != "XOR" && out != &highest_z {
+                wrong.insert(out.to_owned());
+            }
+            if op == "XOR"
+                && !inp0.starts_with("x")
+                && !inp0.starts_with("y")
+                && !inp0.starts_with("z")
+                && !inp1.starts_with("x")
+                && !inp1.starts_with("y")
+                && !inp1.starts_with("z")
+                && !out.starts_with("x")
+                && !out.starts_with("y")
+                && !out.starts_with("z")
+            {
+                wrong.insert(out.to_owned());
+            }
+            if op == "AND" && inp0 != "x00" && inp1 != "x00" {
+                for (_op, _inp0, _inp1, _out) in self.inp_gates.iter() {
+                    if _op != "OR" && (out == _inp0 || out == _inp1) {
+                        wrong.insert(out.to_owned());
+                    }
+                }
+            }
+            if op == "XOR" {
+                for (_op, _inp0, _inp1, _out) in self.inp_gates.iter() {
+                    if _op == "OR" && (out == _inp0 || out == _inp1) {
+                        wrong.insert(out.to_owned());
+                    }
+                }
+            }
+        }
+
+        let mut wrong: Vec<_> = wrong.iter().collect();
+        wrong.sort();
+        wrong.iter().join(",")
+    }
+
+    fn solve(&mut self) -> (i128, String) {
+        self.gates = Self::build_gates(&self.inp_gates);
         self.part1 = self.solve_internal();
+
+        self.gates = Self::build_gates(&self.inp_gates);
+        self.part2 = self.solve_wrong_gates();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 24, Part 1: {}", self.part1);
         println!("Day 24, Part 2: {}", self.part2);
 
-        (self.part1, self.part2)
+        (self.part1, self.part2.to_owned())
     }
 
     fn build_gates(inp_gates: &Vec<(String, String, String, String)>) -> Vec<Gate> {
@@ -112,13 +175,12 @@ impl CrossedWires {
 
     fn new(test_name: String) -> CrossedWires {
         let (inp_wires, inp_gates) = Self::read_input(&test_name);
-        let gates = Self::build_gates(&inp_gates);
         CrossedWires {
             inp_wires,
             inp_gates,
-            gates,
+            gates: vec![],
             part1: 0,
-            part2: 0,
+            part2: String::new(),
             test_name,
         }
     }
@@ -129,7 +191,7 @@ struct CrossedWires {
     inp_gates: Vec<(String, String, String, String)>,
     gates: Vec<Gate>,
     part1: i128,
-    part2: i128,
+    part2: String,
     test_name: String,
 }
 
@@ -161,7 +223,7 @@ struct Gate {
     outv: Option<bool>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Operation {
     And,
     Or,
@@ -179,6 +241,10 @@ mod tests {
 
     #[test]
     fn test_part2() {
-        assert_eq!(CrossedWires::new(String::from("test0")).solve().1, 0);
+        assert_eq!(CrossedWires::new(String::from("test0")).solve().1, "z00");
+        assert_eq!(
+            CrossedWires::new(String::from("test1")).solve().1,
+            "ffh,hwm,kjc,mjb,ntg,rvg,tgd,wpb,z02,z03,z05,z06,z07,z08,z10,z11"
+        );
     }
 }
