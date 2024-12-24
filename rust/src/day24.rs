@@ -1,20 +1,33 @@
-use std::{collections::VecDeque, fs};
+use std::{
+    collections::{HashMap, VecDeque},
+    fs,
+};
+
+use itertools::Itertools;
 
 pub fn solve() {
     CrossedWires::new(String::from("test0")).solve();
     CrossedWires::new(String::from("test1")).solve();
-    // CrossedWires::new(String::from("gh")).solve();
-    // CrossedWires::new(String::from("google")).solve();
+    CrossedWires::new(String::from("gh")).solve();
+    CrossedWires::new(String::from("google")).solve();
 }
 
 impl CrossedWires {
-    fn solve_internal(&mut self) {
+    fn solve_internal(&mut self) -> i128 {
+        let mut vals: HashMap<String, Option<bool>> = HashMap::new();
+        self.gates.iter().for_each(|x| {
+            vals.insert(x.inp0.to_owned(), None);
+            vals.insert(x.inp1.to_owned(), None);
+            vals.insert(x.out.to_owned(), None);
+        });
+
         let mut queue = VecDeque::new();
         self.inp_wires
             .iter()
             .for_each(|x| queue.push_back((x.0.to_owned(), x.1)));
         while !queue.is_empty() {
             if let Some(curr) = queue.pop_front() {
+                vals.insert(curr.0.to_owned(), Some(curr.1));
                 for gate in self.gates.iter_mut() {
                     if gate.inp0 == curr.0 && gate.inp0v.is_none() {
                         gate.inp0v = Some(curr.1);
@@ -27,11 +40,20 @@ impl CrossedWires {
                 }
             }
         }
+
+        let mut vals: Vec<_> = vals.iter().collect();
+        vals.sort_by(|x, y| x.0.cmp(y.0));
+        let val = vals
+            .iter()
+            .filter(|x| x.0.starts_with("z"))
+            .map(|x| if x.1.unwrap() { '1' } else { '0' })
+            .rev()
+            .join("");
+        i128::from_str_radix(&val, 2).unwrap()
     }
 
-    fn solve(&mut self) -> (i32, i32) {
-        self.solve_internal();
-        println!("Gates: {:#?}", self.gates);
+    fn solve(&mut self) -> (i128, i128) {
+        self.part1 = self.solve_internal();
 
         println!("Test Name: {}", self.test_name);
         println!("Day 24, Part 1: {}", self.part1);
@@ -106,8 +128,8 @@ struct CrossedWires {
     inp_wires: Vec<(String, bool)>,
     inp_gates: Vec<(String, String, String, String)>,
     gates: Vec<Gate>,
-    part1: i32,
-    part2: i32,
+    part1: i128,
+    part2: i128,
     test_name: String,
 }
 
@@ -152,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_part1() {
-        assert_eq!(CrossedWires::new(String::from("test0")).solve().0, 0);
+        assert_eq!(CrossedWires::new(String::from("test1")).solve().0, 2024);
     }
 
     #[test]
